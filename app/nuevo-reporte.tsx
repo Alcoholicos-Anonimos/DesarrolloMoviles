@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { reportesService } from "../services/reporte";
-import { TipoDeReporte } from "../tipos";
+import { reportesService } from "../src/servicios/reportes";
+import { TipoDeReporte } from "../src/tipos";
 
 export default function NuevoReporte() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
