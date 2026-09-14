@@ -24,13 +24,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+     
       <Tabs.Screen
         name="reclamo"
         options={{
@@ -42,6 +36,14 @@ export default function TabLayout() {
               color={color}
             />
           ),
+        }}
+      />
+
+       <Tabs.Screen
+        name="mapa"
+        options={{
+          title: 'Mapa',
+          tabBarIcon: ({ color, focused }) => ( <Ionicons name={focused ? 'location' : 'location-outline'}  size={24}  color={color} /> ),
         }}
       />
     </Tabs>
