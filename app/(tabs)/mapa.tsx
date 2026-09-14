@@ -8,6 +8,7 @@ import { reportesService } from '../../src/servicios/reportes';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 
 const obtenerInfoEstado = (estado: EstadoReporte) => {
   switch (estado) {
@@ -25,6 +26,16 @@ const obtenerInfoEstado = (estado: EstadoReporte) => {
   }
 };
 
+const obtenerIcono = (tipoId : string) => {
+  switch (tipoId) { 
+    case 'tip-bache': return 'warning-outline';
+      case 'tip-luz': return 'flash-off-outline';
+      case 'tip-rama': return 'leaf-outline';
+      case 'tip-basura':  return 'trash-outline';
+      case 'tip-agua':  return 'water-outline';
+      case 'tip-otro': return 'ellipsis-horizontal-outline';
+  }
+};
 
 
 export default function MapaScreen() {
@@ -49,8 +60,8 @@ export default function MapaScreen() {
   const [ubicacion, setUbicacion] = useState<Region>({
     latitude: -33.0069,
     longitude: -58.5142,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+    latitudeDelta: 0.009,
+    longitudeDelta: 0.00999,
   });
 
    // Carga asíncrona desde la capa de servicios
@@ -90,8 +101,7 @@ export default function MapaScreen() {
           <Text style={styles.titulo}>Mapa de la ciudad</Text>
       </View>
       <View >
-         
-        <View style={styles.chipsContainer}>
+         <View style={styles.chipsContainer}>
           {tipos.map((tipo) => {
             const estaSeleccionado = tipo === tipoSeleccionado;
             return ( 
@@ -101,16 +111,42 @@ export default function MapaScreen() {
             );
           })}
                 
-            </View> 
-        <MapView style={styles.map} 
-          initialRegion={ubicacion} >
-          {reportes.map((r) => (
-            <Marker
-              key={r.id}  coordinate={{ latitude: r.coordenadas.latitud, longitude: r.coordenadas.longitud, }}
-              pinColor={obtenerInfoEstado(r.estado).color} />
-          ))}
-        </MapView>
-          </View>
+        </View> 
+        
+        <View style={[{ padding: 10,  marginTop: 10, }]}>
+            <MapView style={[styles.map]} 
+              initialRegion={ubicacion} >
+              {reportes.map((r) => (
+                <Marker
+                  key={r.id}  coordinate={{ latitude: r.coordenadas.latitud, longitude: r.coordenadas.longitud, }}
+                  title={r.descripcion === null ? "Sin descripción" : r.descripcion}
+                  description={obtenerInfoEstado(r.estado).label}
+                  pinColor={obtenerInfoEstado(r.estado).color} >
+
+                    <View style={[  styles.pin, { backgroundColor: obtenerInfoEstado(r.estado).color }, ]}  >
+                      <Ionicons
+                        name={(obtenerIcono(r.tipoId)) as any}
+                        size={16}
+                        color="#fff"
+                      />
+                    </View>
+                  </Marker>
+              ))}
+            </MapView>
+        </View>
+        <View  style={[ styles.tarjeta, { backgroundColor: Colors[colorScheme ?? 'light'].background }, ]} >
+          <Text style={[ styles.tarjetaTitulo, { color: Colors[colorScheme ?? 'light'].text }, ]} >  Ya existen 2 reportes a menos de 50m. Es el mismo problema?  </Text>
+          <View style={styles.tarjetaBotones} >
+              <Pressable style={[ styles.botonPrimario,   ]} > 
+                <Text style={[ styles.textoBotonPrimario, { color: Colors[colorScheme ?? 'light'].text }, ]} > Sumarse </Text> 
+                </Pressable>
+              <Pressable style={[ styles.botonPrimario,   ]}  > 
+                <Text style={[ styles.textoBotonPrimario, { color: Colors[colorScheme ?? 'light'].text }, ]} > Es otro problema </Text> 
+                </Pressable>
+            </View>
+         </View>
+        
+        </View>
    </SafeAreaView>
   );
 }
@@ -134,8 +170,17 @@ const crearStyles = (colorScheme: 'light' | 'dark') => StyleSheet.create({
     color: colorScheme === 'light' ? '#000000' : '#FFFFFF',
   }, 
    map: {
-    width: '90%',
-    height: '90%',
+    width: '85%',
+    height: '85%',
+  },
+  pin: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   centro: { flex: 1, alignItems: "center", justifyContent: "center" },
   textoError: { fontSize: 14, color: "#791F1F" },
@@ -211,17 +256,5 @@ const crearStyles = (colorScheme: 'light' | 'dark') => StyleSheet.create({
     alignItems: "center",
   },
   textoBotonPrimario: { color: "#fff", fontSize: 13, fontWeight: "500" },
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#26215c",
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 4,
-  },
-  textoFab: { color: "#fff", fontSize: 26, lineHeight: 26 },
+ 
 });
