@@ -5,6 +5,8 @@ export const MOCK_TIPOS: TipoDeReporte[] = [
   { id: 'tip-luz', nombre: 'Luminaria', icono: 'flash-off-outline', color: '#E5A93C', areaResponsable: 'Electrotecnia' },
   { id: 'tip-rama', nombre: 'Rama caída', icono: 'leaf-outline', color: '#2D6A4F', areaResponsable: 'Espacios Verdes' },
   { id: 'tip-basura', nombre: 'Basura', icono: 'trash-outline', color: '#5B8C5A', areaResponsable: 'Higiene Urbana' },
+  { id: 'tip-agua', nombre: 'Agua', icono: 'water-outline', color: '#3B82F6', areaResponsable: 'Obras Sanitarias' },
+  { id: 'tip-otro', nombre: 'Otro', icono: 'ellipsis-horizontal-outline', color: '#9CA3AF', areaResponsable: 'Mesa de Entradas' },
 ];
 
 export const MOCK_REPORTES: Reporte[] = [
