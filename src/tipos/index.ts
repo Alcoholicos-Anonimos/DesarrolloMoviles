@@ -35,6 +35,15 @@ export interface Reporte {
   sincronizado: boolean;
 }
 
+export interface NuevoReporteInput {
+  tipoId: string;
+  descripcion: string | null;
+  audioUrl: string | null;
+  fotos: Foto[];
+  coordenadas: Coordenadas;
+  direccion: string;
+}
+
 export interface TipoDeReporte {
   id: string;
   nombre: string;
