@@ -1,5 +1,5 @@
-import { Reporte, TipoDeReporte, ApiRespuestaExitosa, NuevoReporteInput } from '../tipos';
-import { MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
+import { Reporte, TipoDeReporte, ApiRespuestaExitosa, NuevoReporteInput, CambioDeEstado } from '../tipos';
+import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
 
 export const reportesService = {
   // Obtiene todos los reportes simulando una petición a la API
@@ -39,4 +39,31 @@ export const reportesService = {
     MOCK_REPORTES.push(nuevoReporte);
     return { datos: nuevoReporte };
   },
-};
+
+  //Obtengo un reporte por id
+  obtenerMisReportesPorId: async (id: string): Promise<ApiRespuestaExitosa<Reporte | undefined>> => {
+    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
+    return {
+      datos: MOCK_REPORTES.find(x => x.id === id),
+      meta: {
+        total: 1,
+        pagina: 1,
+        porPagina: 1,
+      },
+    };
+  },
+
+
+  listarCambiosDeEstado : async (id:string) : Promise <ApiRespuestaExitosa <CambioDeEstado[] | undefined>> =>{
+    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
+    const cambios = CAMBIO_ESTADO.filter(x => x.reporteId === id);
+    return {
+      datos: cambios.length ? cambios : undefined,
+      meta: {
+        total: cambios.length,
+        pagina: 1,
+        porPagina: cambios.length || 1,
+      },
+    };
+  }
+}

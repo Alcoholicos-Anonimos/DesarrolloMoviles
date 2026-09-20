@@ -1,4 +1,4 @@
-import { Reporte, TipoDeReporte } from '../tipos';
+import { CambioDeEstado, Reporte, TipoDeReporte } from '../tipos';
 
 export const MOCK_TIPOS: TipoDeReporte[] = [
   { id: 'tip-bache', nombre: 'Bache', icono: 'warning-outline', color: '#EF4444', areaResponsable: 'Obras Públicas' },
@@ -64,4 +64,13 @@ export const MOCK_REPORTES: Reporte[] = [
     creadoEn: '2026-09-08T11:30:00-03:00',
     sincronizado: true,
   },
+];
+
+export const CAMBIO_ESTADO : CambioDeEstado[]=[
+  {
+    "id": "cam-1177", "reporteId": "rep-00412", "estado": "en_revision",
+    "comentario": "Verificado en el lugar", "operadorId": "usr-003",
+    "fechaHora": "2026-09-15T08:40:00-03:00"
+  }
+
 ];
