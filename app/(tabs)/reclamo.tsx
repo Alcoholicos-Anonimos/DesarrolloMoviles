@@ -5,6 +5,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 
 import { Reporte, TipoDeReporte, EstadoReporte } from '../../src/tipos';
 import { reportesService } from '../../src/servicios/reportes';
+import { router } from 'expo-router';
 
 // Función auxiliar para mapear el color y texto según el estado
 const obtenerInfoEstado = (estado: EstadoReporte) => {
@@ -84,7 +85,12 @@ export default function ReclamoScreen() {
             return (
               <Pressable 
                 style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.7 }]}
-                onPress={() => console.log('Ver detalle', item.codigo)}
+                onPress={() =>
+                  router.push({
+                    pathname: '/[id]',
+                    params: { id: item.id  },
+                  })
+                }
               >
                 {/* Ícono dentro de cajita redondeada */}
                 <View style={styles.iconoBox}>
