@@ -11,15 +11,39 @@ import { Link } from "expo-router";
 const obtenerInfoEstado = (estado: EstadoReporte) => {
   switch (estado) {
     case 'asignado':
-      return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
+      return {
+        label: 'Asignado',
+        color: coloresEstado.asignado.texto,
+        fondo: coloresEstado.asignado.fondo
+      };
+
     case 'resuelto':
-      return { label: 'Resuelto', color: coloresEstado.resuelto.texto }; // Verde
+      return {
+        label: 'Resuelto',
+        color: coloresEstado.resuelto.texto,
+        fondo: coloresEstado.resuelto.fondo
+      };
+
     case 'rechazado':
-      return { label: 'Rechazado', color: coloresEstado.rechazado.texto }; // Rojo
+      return {
+        label: 'Rechazado',
+        color: coloresEstado.rechazado.texto,
+        fondo: coloresEstado.rechazado.fondo
+      };
+
     case 'en_revision':
-      return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
+      return {
+        label: 'En revisión',
+        color: coloresEstado.en_revision.texto,
+        fondo: coloresEstado.en_revision.fondo
+      };
+
     case 'recibido':
-      return { label: 'Recibido', color: coloresEstado.recibido.texto }; // Gris
+      return {
+        label: 'Recibido',
+        color: coloresEstado.recibido.texto,
+        fondo: coloresEstado.recibido.fondo
+      };
   }
 };
 
@@ -119,7 +143,7 @@ export default function ReclamoScreen() {
                 </View>
 
                 {/* Badge / Etiqueta de estado a la derecha */}
-                <View style={[styles.badgeEstado, { borderColor: estadoInfo.color + '40' }]}>
+                <View style={[styles.badgeEstado, { backgroundColor: estadoInfo.fondo, borderColor: estadoInfo.color + '40' }]}>
                   <Text style={[styles.textoBadge, { color: estadoInfo.color }]}>
                     {estadoInfo.label}
                   </Text>

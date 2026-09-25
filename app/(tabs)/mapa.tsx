@@ -138,11 +138,7 @@ export default function MapaScreen() {
           </MapView>
         </View>
 
-        <View style={{ padding: 10, marginTop: 10 }}>
-          <View style={styles.map}>
-            <Text style={styles.titulo}>Mapa temporal</Text>
-          </View>
-        </View>
+       
         <View style={[styles.tarjeta,]} >
           <Text style={[styles.tarjetaTitulo]} >  Ya existen 2 reportes a menos de 50m. Es el mismo problema?  </Text>
           <View style={styles.tarjetaBotones} >

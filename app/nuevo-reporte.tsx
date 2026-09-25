@@ -1,230 +1,265 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, useColorScheme } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
-import { obtenerColores, espaciados, radios, tipografia, pesosFuente, obtenerColoresEstado } from "../styles/theme";
-import { Reporte, TipoDeReporte, EstadoReporte } from '../src/tipos';
-import { reportesService } from '../src/servicios/reportes';
-import { router } from 'expo-router';
-import { Link } from "expo-router";
-// Función auxiliar para mapear el color y texto según el estado
-const obtenerInfoEstado = (estado: EstadoReporte) => {
-  switch (estado) {
-    case 'asignado':
-      return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
-    case 'resuelto':
-      return { label: 'Resuelto', color: coloresEstado.resuelto.texto  }; // Verde
-    case 'rechazado':
-      return { label: 'Rechazado', color: coloresEstado.rechazado.texto  }; // Rojo
-    case 'en_revision':
-      return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
-    case 'recibido':
-    default:
-      return { label: 'Recibido', color: coloresEstado.recibido.texto  }; // Gris
-  }
-};
+import { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { reportesService } from "../src/servicios/reportes";
+import { TipoDeReporte } from "../src/tipos";
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente } from "../styles/theme";
 
-export default function ReclamoScreen() {
-  const [reportes, setReportes] = useState<Reporte[]>([]);
-  const [tipos, setTipos] = useState<TipoDeReporte[]>([]);
-  const [cargando, setCargando] = useState(true);
+export default function NuevoReporte() {
+  const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
+  const [tiposDisponibles, setTiposDisponibles] = useState<TipoDeReporte[]>([]);
 
-  // Carga asíncrona desde la capa de servicios
   useEffect(() => {
-    const cargarDatos = async () => {
-      try {
-        const [respReportes, respTipos] = await Promise.all([
-          reportesService.obtenerMisReportes(),
-          reportesService.obtenerTipos(),
-        ]);
-        setReportes(respReportes.datos);
-        setTipos(respTipos);
-      } catch (error) {
-        console.error('Error al cargar los reclamos:', error);
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    cargarDatos();
+    reportesService.obtenerTipos().then((tipos) => {
+      setTiposDisponibles(tipos);
+    });
   }, []);
-
-  // Función para obtener el tipo de reporte vinculado
-  const obtenerTipo = (tipoId: string) => {
-    return tipos.find((t) => t.id === tipoId);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Encabezado: Título y botón + */}
       <View style={styles.header}>
-        <Text style={styles.titulo}>Mis reclamos</Text>
-
-        <Link href="/nuevo-reporte" asChild>
-          <Pressable
-            style={({ pressed }) => [
-              styles.botonAgregar,
-              pressed && { opacity: 0.6 },
-            ]}
-          >
-            <Ionicons
-              name="add"
-              size={28}
-              color={colores.texto}
-            />
-          </Pressable>
-        </Link>
+        <Pressable onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color= {colores.texto} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Nuevo reporte</Text>
       </View>
 
-      {/* Indicador de carga si la API / mock está respondiendo */}
-      {cargando ? (
-        <View style={styles.centro}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* QUE PASA */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Qué pasa?</Text>
+          <View style={styles.chipsContainer}>
+            {tiposDisponibles.map((tipo) => {
+              const estaSeleccionado = tipo.id === tipoSeleccionado;
+              return (
+                <Pressable
+                  key={tipo.id}
+                  onPress={() => setTipoSeleccionado(tipo.id)}
+                  style={[
+                    styles.chip,
+                    estaSeleccionado && styles.chipSeleccionado,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      estaSeleccionado && styles.chipTextSeleccionado,
+                    ]}
+                  >
+                    {tipo.nombre}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
-      ) : (
-        <FlatList
-          data={reportes}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listaContainer}
-          ItemSeparatorComponent={() => <View style={styles.separador} />}
-          renderItem={({ item }) => {
-            const tipoInfo = obtenerTipo(item.tipoId);
-            const estadoInfo = obtenerInfoEstado(item.estado);
 
-            return (
-              <Pressable 
-                style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.7 }]}
-                onPress={() =>
-                  router.push({
-                    pathname: '/[id]',
-                    params: { id: item.id  },
-                  })
-                }
-              >
-                {/* Ícono dentro de cajita redondeada */}
-                <View style={styles.iconoBox}>
-                  <Ionicons 
-                    name={(tipoInfo?.icono as any) || 'help-outline'} 
-                    size={22} 
-                    color={tipoInfo?.color || '#FFFFFF'} 
-                  />
-                </View>
+        {/* FOTO */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Foto (obligatoria)</Text>
+          <View style={styles.filaBotonesGrandes}>
+            <Pressable style={styles.botonGrande}>
+              <Ionicons name="camera-outline" size={24} color={colores.texto} />
+              <Text style={styles.botonGrandeText}>Tomar foto</Text>
+            </Pressable>
+            <Pressable style={styles.botonGrande}>
+              <Ionicons name="images-outline" size={24} color={colores.texto} />
+              <Text style={styles.botonGrandeText}>Galeria</Text>
+            </Pressable>
+          </View>
+        </View>
 
-                {/* Datos centrales: Título y Código */}
-                <View style={styles.infoCentral}>
-                  <Text style={styles.textoPrincipal} numberOfLines={1}>
-                    {tipoInfo?.nombre || 'Reclamo'} - {item.direccion}
-                  </Text>
-                  <Text style={styles.textoCodigo}>{item.codigo}</Text>
-                </View>
+        {/* DONDE */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>¿Dónde?</Text>
+          <View style={styles.tarjetaUbicacion}>
+            <View style={styles.filaDireccion}>
+              <Ionicons name="location-outline" size={20} color={colores.texto} />
+              <View>
+                <Text style={styles.direccionTexto}>Rocamora 1240</Text>
+                <Text style={styles.distanciaTexto}>
+                  A 12 m de tu ubicacion
+                </Text>
+              </View>
+            </View>
+            <View style={styles.mapaPlaceholder}>
+              <Ionicons name="map-outline" size={28} color={colores.textoSecundario} />
+            </View>
+          </View>
+        </View>
 
-                {/* Badge / Etiqueta de estado a la derecha */}
-                <View style={[styles.badgeEstado, { borderColor: estadoInfo.color + '40' }]}>
-                  <Text style={[styles.textoBadge, { color: estadoInfo.color }]}>
-                    {estadoInfo.label}
-                  </Text>
-                </View>
-              </Pressable>
-            );
-          }}
-        />
-      )}
+        {/* CONTANOS */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Contanos</Text>
+          <View style={styles.filaBotonesGrandes}>
+            <Pressable style={styles.botonContanos}>
+              <Ionicons name="pencil-outline" size={18} color={colores.texto} />
+              <Text style={styles.botonGrandeText}>Escribir</Text>
+            </Pressable>
+            <Pressable style={styles.botonContanos}>
+              <Ionicons name="mic-outline" size={18} color={colores.texto} />
+              <Text style={styles.botonGrandeText}>Grabar audio</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* ENVIAR */}
+        <Pressable style={styles.botonEnviar}>
+          <Text style={styles.botonEnviarText}>Enviar</Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
- const colorScheme = useColorScheme();
+
+const colorScheme = useColorScheme();
 
 const colores = obtenerColores(
   colorScheme === "dark" ? "dark" : "light"
 );
 
-const coloresEstado = obtenerColoresEstado(
-  colorScheme === "dark" ? "dark" : "light"
-);
 const styles = StyleSheet.create({
 
   container: {
     flex: 1,
     backgroundColor: colores.fondo,
-    paddingHorizontal: espaciados.extraGrande,
-  },
-
-  centro: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: espaciados.grande,
+    padding: espaciados.grande,
+    gap: espaciados.grande,
   },
 
-  titulo: {
-    ...tipografia.tituloPantalla,
+  headerTitle: {
+    ...tipografia.titulo,
     color: colores.texto,
   },
 
-  botonAgregar: {
-    padding: espaciados.pequeno,
+  scrollContent: {
+    paddingHorizontal: espaciados.grande,
+    paddingBottom: espaciados.enorme,
   },
 
-  listaContainer: {
-    paddingTop: espaciados.pequeno,
+  section: {
+    marginTop: espaciados.grande,
   },
 
-  separador: {
-    height: 1,
-    backgroundColor: colores.bordeSuave,
-    marginVertical: espaciados.xs,
+  sectionTitle: {
+    ...tipografia.tituloSeccion,
+    color: colores.texto,
+    marginBottom: espaciados.medio,
   },
 
-  itemRow: {
+  chipsContainer: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: espaciados.medio,
+    flexWrap: "wrap",
+    gap: espaciados.pequeno,
   },
 
-  iconoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: radios.medio,
-    backgroundColor: colores.superficie,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: espaciados.medio,
+  chip: {
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: radios.redondo,
+    paddingVertical: 10,
+    paddingHorizontal: espaciados.grande,
   },
 
-  infoCentral: {
-    flex: 1,
-    justifyContent: "center",
+  chipSeleccionado: {
+    backgroundColor: colores.peligroSuave,
+    borderColor: colores.peligro,
   },
 
-  textoPrincipal: {
+  chipText: {
     ...tipografia.texto,
     color: colores.texto,
-    fontWeight: pesosFuente.seminegrita,
-    marginBottom: espaciados.xs,
   },
 
-  textoCodigo: {
+  chipTextSeleccionado: {
+    ...tipografia.texto,
+    color: colores.textoPeligro,
+  },
+
+  filaBotonesGrandes: {
+    flexDirection: "row",
+    gap: espaciados.pequeno,
+  },
+
+  botonGrande: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: radios.medio,
+    paddingVertical: espaciados.muyGrande,
+    alignItems: "center",
+    gap: espaciados.pequeno,
+  },
+
+  botonContanos: {
+    flex: 1,
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: radios.redondo,
+    paddingVertical: espaciados.medio,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: espaciados.pequeno,
+  },
+
+  botonGrandeText: {
+    ...tipografia.texto,
+    color: colores.texto,
+  },
+
+  tarjetaUbicacion: {
+    backgroundColor: colores.superficie,
+    borderRadius: radios.medio,
+    padding: espaciados.grande,
+  },
+
+  filaDireccion: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: espaciados.pequeno,
+    marginBottom: espaciados.medio,
+  },
+
+  direccionTexto: {
+    ...tipografia.texto,
+    fontWeight: pesosFuente.negrita,
+    color: colores.texto,
+  },
+
+  distanciaTexto: {
     ...tipografia.textoSecundario,
     color: colores.textoSecundario,
   },
 
-  badgeEstado: {
-    paddingHorizontal: 10,
-    paddingVertical: espaciados.xs,
+  mapaPlaceholder: {
+    height: 130,
     borderRadius: radios.pequeno,
     borderWidth: 1,
-    marginLeft: espaciados.pequeno,
+    borderColor: colores.bordeSuave,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  textoBadge: {
-    ...tipografia.textoSecundario,
-    fontWeight: pesosFuente.seminegrita,
+  botonEnviar: {
+    backgroundColor: colores.texto,
+    borderRadius: radios.redondo,
+    paddingVertical: espaciados.grande,
+    alignItems: "center",
+    marginTop: espaciados.muyGrande,
+  },
+
+  botonEnviarText: {
+    ...tipografia.texto,
+    fontWeight: pesosFuente.negrita,
+    color: colores.fondo,
   },
 
 });
