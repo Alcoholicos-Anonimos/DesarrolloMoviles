@@ -1,25 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
-
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente, obtenerColoresEstado } from "../../styles/theme";
 import { Reporte, TipoDeReporte, EstadoReporte } from '../../src/tipos';
 import { reportesService } from '../../src/servicios/reportes';
-
+import { router } from 'expo-router';
+import { Link } from "expo-router";
 // Función auxiliar para mapear el color y texto según el estado
 const obtenerInfoEstado = (estado: EstadoReporte) => {
   switch (estado) {
     case 'asignado':
-      return { label: 'Asignado', color: '#D97706' }; // Ámbar/Naranja
+      return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
     case 'resuelto':
-      return { label: 'Resuelto', color: '#16A34A' }; // Verde
+      return { label: 'Resuelto', color: coloresEstado.resuelto.texto }; // Verde
     case 'rechazado':
-      return { label: 'Rechazado', color: '#DC2626' }; // Rojo
+      return { label: 'Rechazado', color: coloresEstado.rechazado.texto }; // Rojo
     case 'en_revision':
-      return { label: 'En revisión', color: '#3B82F6' }; // Azul
+      return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
     case 'recibido':
-    default:
-      return { label: 'Recibido', color: '#9CA3AF' }; // Gris
+      return { label: 'Recibido', color: coloresEstado.recibido.texto }; // Gris
   }
 };
 
@@ -58,12 +58,21 @@ export default function ReclamoScreen() {
       {/* Encabezado: Título y botón + */}
       <View style={styles.header}>
         <Text style={styles.titulo}>Mis reclamos</Text>
-        <Pressable 
-          style={({ pressed }) => [styles.botonAgregar, pressed && { opacity: 0.6 }]}
-          onPress={() => console.log('Ir a crear reclamo')}
-        >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
-        </Pressable>
+
+        <Link href="/nuevo-reporte" asChild>
+          <Pressable
+            style={({ pressed }) => [
+              styles.botonAgregar,
+              pressed && { opacity: 0.6 },
+            ]}
+          >
+            <Ionicons
+              name="add"
+              size={28}
+              color={colores.texto}
+            />
+          </Pressable>
+        </Link>
       </View>
 
       {/* Indicador de carga si la API / mock está respondiendo */}
@@ -84,14 +93,20 @@ export default function ReclamoScreen() {
             return (
               <Pressable 
                 style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.7 }]}
-                onPress={() => console.log('Ver detalle', item.codigo)}
+                onPress={() =>
+                  router.push({
+                    pathname: '/[id]',
+                    params: { id: item.id  },
+                  })
+                }
+                
               >
                 {/* Ícono dentro de cajita redondeada */}
                 <View style={styles.iconoBox}>
                   <Ionicons 
                     name={(tipoInfo?.icono as any) || 'help-outline'} 
                     size={22} 
-                    color={tipoInfo?.color || '#FFFFFF'} 
+                    color={tipoInfo?.color || colores.blanco} 
                   />
                 </View>
 
@@ -118,76 +133,98 @@ export default function ReclamoScreen() {
   );
 }
 
+ const colorScheme = useColorScheme();
+
+const colores = obtenerColores(
+  colorScheme === "dark" ? "dark" : "light"
+);
+const coloresEstado = obtenerColoresEstado(
+  colorScheme === "dark" ? "dark" : "light"
+);
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: '#121212',
-    paddingHorizontal: 20,
+    backgroundColor: colores.fondo,
+    paddingHorizontal: espaciados.extraGrande,
   },
+
   centro: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 18,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: espaciados.grande,
   },
+
   titulo: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    ...tipografia.tituloPantalla,
+    color: colores.texto,
   },
+
   botonAgregar: {
-    padding: 6,
+    padding: espaciados.pequeno,
   },
+
   listaContainer: {
-    paddingTop: 10,
+    paddingTop: espaciados.pequeno,
   },
+
   separador: {
     height: 1,
-    backgroundColor: '#262626',
-    marginVertical: 4,
+    backgroundColor: colores.bordeSuave,
+    marginVertical: espaciados.xs,
   },
+
   itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: espaciados.medio,
   },
+
   iconoBox: {
     width: 44,
     height: 44,
-    borderRadius: 12,
-    backgroundColor: '#1E1E1E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
+    borderRadius: radios.medio,
+    backgroundColor: colores.superficie,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: espaciados.medio,
   },
+
   infoCentral: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
+
   textoPrincipal: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F3F4F6',
-    marginBottom: 4,
+    ...tipografia.texto,
+    color: colores.texto,
+    fontWeight: pesosFuente.seminegrita,
+    marginBottom: espaciados.xs,
   },
+
   textoCodigo: {
-    fontSize: 13,
-    color: '#9CA3AF',
+    ...tipografia.textoSecundario,
+    color: colores.textoSecundario,
   },
+
   badgeEstado: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: espaciados.xs,
+    borderRadius: radios.pequeno,
     borderWidth: 1,
-    marginLeft: 10,
+    marginLeft: espaciados.pequeno,
   },
+
   textoBadge: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...tipografia.textoSecundario,
+    fontWeight: pesosFuente.seminegrita,
   },
+
 });
