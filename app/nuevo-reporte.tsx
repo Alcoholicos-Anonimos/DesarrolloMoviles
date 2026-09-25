@@ -2,25 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
-import { obtenerColores, espaciados, radios, tipografia, pesosFuente } from "../../styles/theme";
-import { Reporte, TipoDeReporte, EstadoReporte } from '../../src/tipos';
-import { reportesService } from '../../src/servicios/reportes';
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente, obtenerColoresEstado } from "../styles/theme";
+import { Reporte, TipoDeReporte, EstadoReporte } from '../src/tipos';
+import { reportesService } from '../src/servicios/reportes';
 import { router } from 'expo-router';
 import { Link } from "expo-router";
 // Función auxiliar para mapear el color y texto según el estado
 const obtenerInfoEstado = (estado: EstadoReporte) => {
   switch (estado) {
     case 'asignado':
-      return { label: 'Asignado', color: '#D97706' }; // Ámbar/Naranja
+      return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
     case 'resuelto':
-      return { label: 'Resuelto', color: '#16A34A' }; // Verde
+      return { label: 'Resuelto', color: coloresEstado.resuelto.texto  }; // Verde
     case 'rechazado':
-      return { label: 'Rechazado', color: '#DC2626' }; // Rojo
+      return { label: 'Rechazado', color: coloresEstado.rechazado.texto  }; // Rojo
     case 'en_revision':
-      return { label: 'En revisión', color: '#3B82F6' }; // Azul
+      return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
     case 'recibido':
     default:
-      return { label: 'Recibido', color: '#9CA3AF' }; // Gris
+      return { label: 'Recibido', color: coloresEstado.recibido.texto  }; // Gris
   }
 };
 
@@ -138,6 +138,9 @@ const colores = obtenerColores(
   colorScheme === "dark" ? "dark" : "light"
 );
 
+const coloresEstado = obtenerColoresEstado(
+  colorScheme === "dark" ? "dark" : "light"
+);
 const styles = StyleSheet.create({
 
   container: {
