@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { reportesService } from "../src/servicios/reportes";
 import { TipoDeReporte } from "../src/tipos";
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente } from "../styles/theme";
 
 export default function NuevoReporte() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
@@ -20,7 +21,7 @@ export default function NuevoReporte() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="white" />
+          <Ionicons name="arrow-back" size={24} color= {colores.texto} />
         </Pressable>
         <Text style={styles.headerTitle}>Nuevo reporte</Text>
       </View>
@@ -60,11 +61,11 @@ export default function NuevoReporte() {
           <Text style={styles.sectionTitle}>Foto (obligatoria)</Text>
           <View style={styles.filaBotonesGrandes}>
             <Pressable style={styles.botonGrande}>
-              <Ionicons name="camera-outline" size={24} color="white" />
+              <Ionicons name="camera-outline" size={24} color={colores.texto} />
               <Text style={styles.botonGrandeText}>Tomar foto</Text>
             </Pressable>
             <Pressable style={styles.botonGrande}>
-              <Ionicons name="images-outline" size={24} color="white" />
+              <Ionicons name="images-outline" size={24} color={colores.texto} />
               <Text style={styles.botonGrandeText}>Galeria</Text>
             </Pressable>
           </View>
@@ -75,7 +76,7 @@ export default function NuevoReporte() {
           <Text style={styles.sectionTitle}>¿Dónde?</Text>
           <View style={styles.tarjetaUbicacion}>
             <View style={styles.filaDireccion}>
-              <Ionicons name="location-outline" size={20} color="white" />
+              <Ionicons name="location-outline" size={20} color={colores.texto} />
               <View>
                 <Text style={styles.direccionTexto}>Rocamora 1240</Text>
                 <Text style={styles.distanciaTexto}>
@@ -84,7 +85,7 @@ export default function NuevoReporte() {
               </View>
             </View>
             <View style={styles.mapaPlaceholder}>
-              <Ionicons name="map-outline" size={28} color="#666" />
+              <Ionicons name="map-outline" size={28} color={colores.textoSecundario} />
             </View>
           </View>
         </View>
@@ -94,11 +95,11 @@ export default function NuevoReporte() {
           <Text style={styles.sectionTitle}>Contanos</Text>
           <View style={styles.filaBotonesGrandes}>
             <Pressable style={styles.botonContanos}>
-              <Ionicons name="pencil-outline" size={18} color="white" />
+              <Ionicons name="pencil-outline" size={18} color={colores.texto} />
               <Text style={styles.botonGrandeText}>Escribir</Text>
             </Pressable>
             <Pressable style={styles.botonContanos}>
-              <Ionicons name="mic-outline" size={18} color="white" />
+              <Ionicons name="mic-outline" size={18} color={colores.texto} />
               <Text style={styles.botonGrandeText}>Grabar audio</Text>
             </Pressable>
           </View>
@@ -113,121 +114,152 @@ export default function NuevoReporte() {
   );
 }
 
+const colorScheme = useColorScheme();
+
+const colores = obtenerColores(
+  colorScheme === "dark" ? "dark" : "light"
+);
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: colores.fondo,
   },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    gap: 16,
+    padding: espaciados.grande,
+    gap: espaciados.grande,
   },
+
   headerTitle: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
+    ...tipografia.titulo,
+    color: colores.texto,
   },
+
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingHorizontal: espaciados.grande,
+    paddingBottom: espaciados.enorme,
   },
+
   section: {
-    marginTop: 16,
+    marginTop: espaciados.grande,
   },
+
   sectionTitle: {
-    color: "white",
-    fontSize: 16,
-    marginBottom: 12,
+    ...tipografia.tituloSeccion,
+    color: colores.texto,
+    marginBottom: espaciados.medio,
   },
+
   chipsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: espaciados.pequeno,
   },
+
   chip: {
     borderWidth: 1,
-    borderColor: "#444",
-    borderRadius: 20,
+    borderColor: colores.borde,
+    borderRadius: radios.redondo,
     paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: espaciados.grande,
   },
+
   chipSeleccionado: {
-    backgroundColor: "#3a1414",
-    borderColor: "#c0392b",
+    backgroundColor: colores.peligroSuave,
+    borderColor: colores.peligro,
   },
+
   chipText: {
-    color: "white",
+    ...tipografia.texto,
+    color: colores.texto,
   },
+
   chipTextSeleccionado: {
-    color: "#e74c3c",
+    ...tipografia.texto,
+    color: colores.textoPeligro,
   },
+
   filaBotonesGrandes: {
     flexDirection: "row",
-    gap: 10,
+    gap: espaciados.pequeno,
   },
+
   botonGrande: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#444",
-    borderRadius: 12,
-    paddingVertical: 20,
+    borderColor: colores.borde,
+    borderRadius: radios.medio,
+    paddingVertical: espaciados.muyGrande,
     alignItems: "center",
-    gap: 8,
+    gap: espaciados.pequeno,
   },
+
   botonContanos: {
     flex: 1,
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: "#444",
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderColor: colores.borde,
+    borderRadius: radios.redondo,
+    paddingVertical: espaciados.medio,
     justifyContent: "center",
     alignItems: "center",
-    gap: 8,
+    gap: espaciados.pequeno,
   },
+
   botonGrandeText: {
-    color: "white",
+    ...tipografia.texto,
+    color: colores.texto,
   },
+
   tarjetaUbicacion: {
-    backgroundColor: "#1e1e1e",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colores.superficie,
+    borderRadius: radios.medio,
+    padding: espaciados.grande,
   },
+
   filaDireccion: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
+    gap: espaciados.pequeno,
+    marginBottom: espaciados.medio,
   },
+
   direccionTexto: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 15,
+    ...tipografia.texto,
+    fontWeight: pesosFuente.negrita,
+    color: colores.texto,
   },
+
   distanciaTexto: {
-    color: "#888",
-    fontSize: 13,
+    ...tipografia.textoSecundario,
+    color: colores.textoSecundario,
   },
+
   mapaPlaceholder: {
     height: 130,
-    borderRadius: 8,
+    borderRadius: radios.pequeno,
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: colores.bordeSuave,
     alignItems: "center",
     justifyContent: "center",
   },
+
   botonEnviar: {
-    backgroundColor: "white",
-    borderRadius: 30,
-    paddingVertical: 16,
+    backgroundColor: colores.texto,
+    borderRadius: radios.redondo,
+    paddingVertical: espaciados.grande,
     alignItems: "center",
-    marginTop: 24,
+    marginTop: espaciados.muyGrande,
   },
+
   botonEnviarText: {
-    color: "black",
-    fontWeight: "bold",
-    fontSize: 16,
+    ...tipografia.texto,
+    fontWeight: pesosFuente.negrita,
+    color: colores.fondo,
   },
+
 });

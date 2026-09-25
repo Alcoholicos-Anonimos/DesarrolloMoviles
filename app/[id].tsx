@@ -7,6 +7,7 @@ import { reportesService } from "../src/servicios/reportes";
 import { CambioDeEstado, EstadoReporte, Reporte, TipoDeReporte } from "../src/tipos";
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente, estilosComunes, obtenerColoresEstado } from "../styles/theme";
 
 const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   recibido: "Recibido",
@@ -16,13 +17,7 @@ const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   rechazado: "Rechazado",
 };
 
-const COLOR_ESTADO: Record<EstadoReporte, { fondo: string; texto: string }> = {
-  recibido: { fondo: "#e6f1fb", texto: "#0C447C" },
-  en_revision: { fondo: "#faeeda", texto: "#633806" },
-  asignado: { fondo: "#faeeda", texto: "#633806" },
-  resuelto: { fondo: "#eaf3de", texto: "#27500a" },
-  rechazado: { fondo: "#fcebeb", texto: "#791f1f" },
-};
+
 
 function formatearFecha(iso: string) {
   const d = new Date(iso);
@@ -91,7 +86,7 @@ export default function DetalleReporte(){
     );
   }
 
-  const colorEstado = COLOR_ESTADO[reporte.estado];
+  const colorEstado = coloresEstado[reporte.estado];
   const fotoProblema = reporte.fotos.find((f) => f.momento === "problema");
   const fotoArreglo = reporte.fotos.find((f) => f.momento === "arreglo");
 
@@ -107,11 +102,11 @@ export default function DetalleReporte(){
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back-outline" size={22} />
+          <Ionicons name="arrow-back-outline" size={24} color={colores.texto}/>
         </Pressable>
         <Text style={styles.headerCodigo}>{reporte.codigo}</Text>
         <Pressable onPress={() => setMostrarQR(true)} hitSlop={12}>
-          <Ionicons name="qr-code-outline" size={22} />
+          <Ionicons name="qr-code-outline" size={24}  color={colores.texto}/>
         </Pressable>
       </View>
 
@@ -128,7 +123,7 @@ export default function DetalleReporte(){
 
         {reporte.adhesiones > 0 && (
           <View style={styles.filaAdhesiones}>
-            <Ionicons name="people-outline" size={14} color="#5f5e5a" />
+            <Ionicons name="people-outline" size={14} color={colores.textoSecundario} />
             <Text style={styles.textoAdhesiones}>
               {reporte.adhesiones} vecino{reporte.adhesiones === 1 ? "" : "s"}{" "}
               se sumaron
@@ -154,7 +149,7 @@ export default function DetalleReporte(){
 
         {reporte.audioUrl && (
           <Pressable style={styles.botonAudio}>
-            <Ionicons name="play-circle-outline" size={20} color="#26215c" />
+            <Ionicons name="play-circle-outline" size={20} color={colores.texto} />
             <Text style={styles.botonAudioTexto}>Escuchar nota de voz</Text>
           </Pressable>
         )}
@@ -216,100 +211,215 @@ export default function DetalleReporte(){
   );
 }
 
-const crearStyles = (colorScheme: 'light' | 'dark') => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colorScheme === 'light' ? '#ffffffff' : '#000000',
-    paddingHorizontal: 20,
-  },
-  centro: { flex: 1, alignItems: "center", justifyContent: "center" },
-  textoError: { fontSize: 14, color: "#791F1F" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 14,
-    borderBottomWidth: 0.5,
-    borderColor:  colorScheme === 'light' ? '#ffffffff' : '#000000',
-  },
-  headerCodigo: { fontSize: 14, fontWeight: "500" },
-  contenido: { padding: 14 },
-  titulo: { fontSize: 17, fontWeight: "500", marginBottom: 6 },
-  badge: {
-    alignSelf: "flex-start",
-    borderRadius: 8,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginBottom: 8,
-  },
-  badgeTexto: { fontSize: 12, fontWeight: "500" },
-  filaAdhesiones: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 14,
-  },
-  textoAdhesiones: { fontSize: 12, color: "#5f5e5a" },
-  cajaMotivo: {
-    backgroundColor:  colorScheme === 'light' ? '#ffffffff' : '#000000',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 14,
-  },
-  cajaMotivoTitulo: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#791f1f",
-    marginBottom: 4,
-  },
-  cajaMotivoTexto: { fontSize: 13, color: "#791f1f" },
-  foto: {
-    width: "100%",
-    height: 180,
-    borderRadius: 8,
-    backgroundColor:  colorScheme === 'light' ? '#ffffffff' : '#000000',
-    marginBottom: 14,
-  },
-  descripcion: { fontSize: 13, color:  colorScheme === 'light' ? '#ffffffff' : '#000000', marginBottom: 14 },
-  botonAudio: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 0.5,
-    borderColor:  colorScheme === 'light' ? '#ffffffff' : '#000000',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 14,
-  },
-  botonAudioTexto: { fontSize: 13, color: "#26215c" },
-  bloqueArreglo: { marginBottom: 14 },
-  subtitulo: { fontSize: 13, color: "#5f5e5a", marginBottom: 10 },
-  timeline: { gap: 12 },
-  timelineItem: { flexDirection: "row", gap: 10 },
-  timelineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#888780",
-    marginTop: 5,
-  },
-  timelineDotActivo: { backgroundColor: "#854F0B" },
-  timelineFecha: { fontSize: 12, color: "#888780" },
-  timelineEstado: { fontSize: 13 },
-  timelineComentario: { fontSize: 12, color: "#5f5e5a", marginTop: 2 },
-  fondoModal: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  tarjetaQR: {
-    backgroundColor:  colorScheme === 'light' ? '#ffffffff' : '#000000',
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-    gap: 8,
-  },
-  textoQR: { fontSize: 15, fontWeight: "500", marginTop: 4 },
-  subtextoQR: { fontSize: 12, color: "#888780" },
-});
+const colorScheme = useColorScheme();
+
+const colores = obtenerColores(
+  colorScheme === "dark" ? "dark" : "light"
+);
+
+
+const coloresEstado = obtenerColoresEstado(
+  colorScheme === "dark" ? "dark" : "light"
+);
+
+const crearStyles = (colorScheme: "light" | "dark") => {
+  const colores = obtenerColores(colorScheme);
+
+  return StyleSheet.create({
+
+    container: {
+      flex: 1,
+      backgroundColor: colores.fondo,
+      paddingHorizontal: espaciados.extraGrande,
+    },
+
+    centro: {
+      ...estilosComunes.centro,
+    },
+
+    textoError: {
+      ...tipografia.texto,
+      color: colores.error,
+    },
+
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: espaciados.medio,
+      borderBottomWidth: 0.5,
+      borderColor: colores.bordeSuave,
+    },
+
+    headerCodigo: {
+   ...tipografia.tituloPantalla,
+     color: colores.texto,
+    },
+
+    contenido: {
+      padding: espaciados.medio,
+    },
+
+    titulo: {
+      ...tipografia.titulo,
+      fontSize: 17,
+      fontWeight: pesosFuente.medio,
+      color: colores.texto,
+      marginBottom: espaciados.xs,
+    },
+
+    badge: {
+      alignSelf: "flex-start",
+      borderRadius: radios.pequeno,
+      paddingVertical: 5,
+      paddingHorizontal: espaciados.medio,
+      marginBottom: espaciados.pequeno,
+    },
+
+    badgeTexto: {
+      // ...tipografia.textoPequeno,
+      // fontWeight: pesosFuente.medio,
+       borderWidth: 1,
+          borderColor: colores.borde,
+          borderRadius: radios.redondo,
+          paddingVertical: 10,
+          paddingHorizontal: espaciados.grande,
+    },
+
+    filaAdhesiones: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: espaciados.xs,
+      marginBottom: espaciados.medio,
+    },
+
+    textoAdhesiones: {
+      ...tipografia.textoPequeno,
+      color: colores.textoSecundario,
+    },
+
+    cajaMotivo: {
+      backgroundColor: colores.superficie,
+      borderRadius: radios.pequeno,
+      padding: espaciados.medio,
+      marginBottom: espaciados.medio,
+    },
+
+    cajaMotivoTitulo: {
+      ...tipografia.textoPequeno,
+      fontWeight: pesosFuente.medio,
+      color: colores.error,
+      marginBottom: espaciados.xs,
+    },
+
+    cajaMotivoTexto: {
+      ...tipografia.textoSecundario,
+      color: colores.error,
+    },
+
+    foto: {
+      width: "100%",
+      height: 180,
+      borderRadius: radios.pequeno,
+      backgroundColor: colores.superficie,
+      marginBottom: espaciados.medio,
+    },
+
+    descripcion: {
+      ...tipografia.textoSecundario,
+      color: colores.texto,
+      marginBottom: espaciados.medio,
+    },
+
+    botonAudio: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: espaciados.pequeno,
+      borderWidth: 0.5,
+      borderColor: colores.borde,
+      borderRadius: radios.pequeno,
+      padding: espaciados.pequeno,
+      marginBottom: espaciados.medio,
+    },
+
+    botonAudioTexto: {
+      ...tipografia.textoSecundario,
+      color: colores.primario,
+    },
+
+    bloqueArreglo: {
+      marginBottom: espaciados.medio,
+    },
+
+    subtitulo: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
+      marginBottom: espaciados.pequeno,
+    },
+
+    timeline: {
+      gap: espaciados.medio,
+    },
+
+    timelineItem: {
+      flexDirection: "row",
+      gap: espaciados.pequeno,
+    },
+
+    timelineDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colores.textoSuave,
+      marginTop: 5,
+    },
+
+    timelineDotActivo: {
+      backgroundColor: colores.advertencia,
+    },
+
+    timelineFecha: {
+      ...tipografia.textoPequeno,
+      color: colores.textoSuave,
+    },
+
+    timelineEstado: {
+      ...tipografia.textoSecundario,
+      color: colores.texto,
+    },
+
+    timelineComentario: {
+      ...tipografia.textoPequeno,
+      color: colores.textoSecundario,
+      marginTop: 2,
+    },
+
+    fondoModal: {
+      flex: 1,
+      backgroundColor: colores.fondoModal,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    tarjetaQR: {
+      backgroundColor: colores.superficie,
+      borderRadius: radios.grande,
+      padding: espaciados.muyGrande,
+      alignItems: "center",
+      gap: espaciados.pequeno,
+    },
+
+    textoQR: {
+      ...tipografia.texto,
+      fontWeight: pesosFuente.medio,
+      color: colores.texto,
+      marginTop: espaciados.xs,
+    },
+
+    subtextoQR: {
+      ...tipografia.textoPequeno,
+      color: colores.textoSuave,
+    },
+
+  });
+};
