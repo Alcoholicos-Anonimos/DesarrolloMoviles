@@ -27,7 +27,7 @@ export function SelectorTipoProblema({
   const [tiposDisponibles, setTiposDisponibles] = useState<TipoDeReporte[]>([]);
 
   const colorScheme = useColorScheme();
-  const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
+
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
 
   useEffect(() => {
