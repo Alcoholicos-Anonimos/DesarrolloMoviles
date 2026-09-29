@@ -3,6 +3,8 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { authService } from "@/src/servicios/auth";
 
 import {
   obtenerColores,
@@ -22,6 +25,9 @@ import {
   tipografia,
   pesosFuente,
 } from "@/styles/theme";
+
+// Formato básico de email: algo@algo.algo
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function InicioSesionScreen() {
   const [email, setEmail] = useState("");
@@ -32,6 +38,35 @@ export default function InicioSesionScreen() {
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const styles = crearStyles(tema);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const ingresar = async () => {
+    setError(null);
+
+    if (!email.trim() || !contrasena) {
+      setError("Completá el email y la contraseña.");
+      return;
+    }
+    if (!EMAIL_VALIDO.test(email.trim())) {
+      setError("El email no tiene un formato válido.");
+      return;
+    }
+
+    setCargando(true);
+    try {
+      await authService.iniciarSesion(email, contrasena);
+      router.replace("/(tabs)/reclamo"); // replace: "atrás" no vuelve al login
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const olvideContrasena = () => {
+    Alert.alert("Próximamente", "La recuperación de contraseña todavía no está disponible.");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -95,18 +130,27 @@ export default function InicioSesionScreen() {
           </View>
 
           {/* OLVIDÉ MI CONTRASEÑA */}
-          <Pressable style={styles.botonOlvido} hitSlop={8}>
+          <Pressable style={styles.botonOlvido} hitSlop={8} onPress={olvideContrasena}>
             <Text style={styles.textoEnlace}>¿Olvidaste tu contraseña?</Text>
           </Pressable>
 
+          {/* MENSAJE DE ERROR */}
+          {error && <Text style={styles.textoError}>{error}</Text>}
+
           {/* BOTÓN PRINCIPAL */}
           <Pressable
+            onPress={ingresar}
+            disabled={cargando}
             style={({ pressed }) => [
               styles.boton,
-              pressed && styles.botonPresionado,
+              (pressed || cargando) && styles.botonPresionado,
             ]}
           >
-            <Text style={styles.textoBoton}>Ingresar</Text>
+            {cargando ? (
+              <ActivityIndicator color={colores.blanco} />
+            ) : (
+              <Text style={styles.textoBoton}>Ingresar</Text>
+            )}
           </Pressable>
 
           {/* SEPARADOR */}
@@ -226,12 +270,22 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       fontWeight: pesosFuente.medio,
     },
 
+    // Error
+    textoError: {
+      ...tipografia.textoSecundario,
+      color: colores.textoPeligro,
+      textAlign: "center",
+      marginBottom: espaciados.medio,
+    },
+
     // Botón principal
     boton: {
       backgroundColor: colores.primario,
       borderRadius: radios.redondo,
       paddingVertical: espaciados.medio,
       alignItems: "center",
+      minHeight: 44,
+      justifyContent: "center",
     },
     botonPresionado: {
       opacity: 0.7,
