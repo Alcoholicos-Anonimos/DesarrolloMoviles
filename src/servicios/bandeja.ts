@@ -94,7 +94,9 @@ export const bandejaService = {
     return { datos: reporte };
   },
 
-  // Marca un reporte como duplicado de otro
+  // Marca un reporte como duplicado de otro.
+  // Según Germán (foro): se guarda duplicadoDe, el estado pasa a rechazado
+  // y el comentario dice "Reclamo duplicado de este: <id del original>".
   marcarDuplicado: async (
     reporteId: string,
     originalId: string,
@@ -106,12 +108,12 @@ export const bandejaService = {
     }
     const reporte = buscarReporte(reporteId);
     const original = buscarReporte(originalId);
-    reporte.duplicadoDe = originalId;
-    original.adhesiones += 1; // el vecino "se suma" al reporte original
+    reporte.duplicadoDe = original.id;
+    reporte.estado = 'rechazado';
     registrarCambio(
       reporteId,
-      reporte.estado,
-      `Marcado como duplicado de ${original.codigo}`,
+      'rechazado',
+      `Reclamo duplicado de este: ${original.id}`,
       operadorId
     );
     return { datos: reporte };

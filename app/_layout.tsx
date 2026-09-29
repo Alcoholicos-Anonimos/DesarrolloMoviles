@@ -50,6 +50,7 @@ function NavegacionRaiz() {
         {/* Vecino */}
         <Stack.Protected guard={esVecino}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="nuevo-reporte" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Operador */}
@@ -57,8 +58,7 @@ function NavegacionRaiz() {
           <Stack.Screen name="bandeja" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        {/* Para todos (incluye "Reportar sin cuenta") */}
-        <Stack.Screen name="nuevo-reporte" options={{ headerShown: false }} />
+        {/* Login obligatorio (acordado con Germán en el foro): no hay pantallas sin sesión salvo el login */}
         <Stack.Screen
           name="modal"
           options={{ presentation: "modal", title: "Modal" }}

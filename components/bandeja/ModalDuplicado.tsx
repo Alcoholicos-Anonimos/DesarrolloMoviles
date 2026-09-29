@@ -84,7 +84,7 @@ export function ModalDuplicado({ reporte, tipos, operadorId, onCerrar, onListo }
     if (!reporte) return;
     Alert.alert(
       "Marcar como duplicado",
-      `¿${reporte.codigo} es el mismo problema que ${original.codigo}?`,
+      `¿${reporte.codigo} es el mismo problema que ${original.codigo}? El reporte va a quedar Rechazado.`,
       [
         { text: "Cancelar", style: "cancel" },
         { text: "Sí, es duplicado", onPress: () => marcar(original) },
