@@ -56,7 +56,6 @@ export default function InicioSesionScreen() {
     setCargando(true);
     try {
       await iniciarSesion(email, contrasena);
-      router.replace("/(tabs)/reclamo"); // replace: "atrás" no vuelve al login
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
     } finally {

@@ -1,48 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, ActivityIndicator, useColorScheme } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
-import { obtenerColores, espaciados, radios, tipografia, pesosFuente, obtenerColoresEstado } from "../../styles/theme";
-import { Reporte, TipoDeReporte, EstadoReporte } from '../../src/tipos';
-import { reportesService } from '../../src/servicios/reportes';
-import { router } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
+  useColorScheme,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import {
+  obtenerColores,
+  espaciados,
+  radios,
+  tipografia,
+  pesosFuente,
+  obtenerColoresEstado,
+} from "../../styles/theme";
+import { Reporte, TipoDeReporte, EstadoReporte } from "../../src/tipos";
+import { reportesService } from "../../src/servicios/reportes";
+import { router } from "expo-router";
 import { Link } from "expo-router";
+import { useAuth } from "@/src/contexto/AuthContext";
 // Función auxiliar para mapear el color y texto según el estado
 const obtenerInfoEstado = (estado: EstadoReporte) => {
   switch (estado) {
-    case 'asignado':
+    case "asignado":
       return {
-        label: 'Asignado',
+        label: "Asignado",
         color: coloresEstado.asignado.texto,
-        fondo: coloresEstado.asignado.fondo
+        fondo: coloresEstado.asignado.fondo,
       };
 
-    case 'resuelto':
+    case "resuelto":
       return {
-        label: 'Resuelto',
+        label: "Resuelto",
         color: coloresEstado.resuelto.texto,
-        fondo: coloresEstado.resuelto.fondo
+        fondo: coloresEstado.resuelto.fondo,
       };
 
-    case 'rechazado':
+    case "rechazado":
       return {
-        label: 'Rechazado',
+        label: "Rechazado",
         color: coloresEstado.rechazado.texto,
-        fondo: coloresEstado.rechazado.fondo
+        fondo: coloresEstado.rechazado.fondo,
       };
 
-    case 'en_revision':
+    case "en_revision":
       return {
-        label: 'En revisión',
+        label: "En revisión",
         color: coloresEstado.en_revision.texto,
-        fondo: coloresEstado.en_revision.fondo
+        fondo: coloresEstado.en_revision.fondo,
       };
 
-    case 'recibido':
+    case "recibido":
       return {
-        label: 'Recibido',
+        label: "Recibido",
         color: coloresEstado.recibido.texto,
-        fondo: coloresEstado.recibido.fondo
+        fondo: coloresEstado.recibido.fondo,
       };
   }
 };
@@ -51,6 +68,14 @@ export default function ReclamoScreen() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [tipos, setTipos] = useState<TipoDeReporte[]>([]);
   const [cargando, setCargando] = useState(true);
+  const { cerrarSesion } = useAuth();
+
+  const confirmarCerrarSesion = () => {
+    Alert.alert("Cerrar sesión", "¿Querés salir de tu cuenta?", [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Salir", style: "destructive", onPress: cerrarSesion },
+    ]);
+  };
 
   // Carga asíncrona desde la capa de servicios
   useEffect(() => {
@@ -63,7 +88,7 @@ export default function ReclamoScreen() {
         setReportes(respReportes.datos);
         setTipos(respTipos);
       } catch (error) {
-        console.error('Error al cargar los reclamos:', error);
+        console.error("Error al cargar los reclamos:", error);
       } finally {
         setCargando(false);
       }
@@ -83,20 +108,35 @@ export default function ReclamoScreen() {
       <View style={styles.header}>
         <Text style={styles.titulo}>Mis reclamos</Text>
 
-        <Link href="/nuevo-reporte" asChild>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: espaciados.pequeno,
+          }}
+        >
           <Pressable
+            onPress={confirmarCerrarSesion}
             style={({ pressed }) => [
               styles.botonAgregar,
               pressed && { opacity: 0.6 },
             ]}
+            accessibilityLabel="Cerrar sesión"
           >
-            <Ionicons
-              name="add"
-              size={28}
-              color={colores.texto}
-            />
+            <Ionicons name="log-out-outline" size={26} color={colores.texto} />
           </Pressable>
-        </Link>
+
+          <Link href="/nuevo-reporte" asChild>
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonAgregar,
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <Ionicons name="add" size={28} color={colores.texto} />
+            </Pressable>
+          </Link>
+        </View>
       </View>
 
       {/* Indicador de carga si la API / mock está respondiendo */}
@@ -115,36 +155,48 @@ export default function ReclamoScreen() {
             const estadoInfo = obtenerInfoEstado(item.estado);
 
             return (
-              <Pressable 
-                style={({ pressed }) => [styles.itemRow, pressed && { opacity: 0.7 }]}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.itemRow,
+                  pressed && { opacity: 0.7 },
+                ]}
                 onPress={() =>
                   router.push({
-                    pathname: '/[id]',
-                    params: { id: item.id  },
+                    pathname: "/[id]",
+                    params: { id: item.id },
                   })
                 }
-                
               >
                 {/* Ícono dentro de cajita redondeada */}
                 <View style={styles.iconoBox}>
-                  <Ionicons 
-                    name={(tipoInfo?.icono as any) || 'help-outline'} 
-                    size={22} 
-                    color={tipoInfo?.color || colores.blanco} 
+                  <Ionicons
+                    name={(tipoInfo?.icono as any) || "help-outline"}
+                    size={22}
+                    color={tipoInfo?.color || colores.blanco}
                   />
                 </View>
 
                 {/* Datos centrales: Título y Código */}
                 <View style={styles.infoCentral}>
                   <Text style={styles.textoPrincipal} numberOfLines={1}>
-                    {tipoInfo?.nombre || 'Reclamo'} - {item.direccion}
+                    {tipoInfo?.nombre || "Reclamo"} - {item.direccion}
                   </Text>
                   <Text style={styles.textoCodigo}>{item.codigo}</Text>
                 </View>
 
                 {/* Badge / Etiqueta de estado a la derecha */}
-                <View style={[styles.badgeEstado, { backgroundColor: estadoInfo.fondo, borderColor: estadoInfo.color + '40' }]}>
-                  <Text style={[styles.textoBadge, { color: estadoInfo.color }]}>
+                <View
+                  style={[
+                    styles.badgeEstado,
+                    {
+                      backgroundColor: estadoInfo.fondo,
+                      borderColor: estadoInfo.color + "40",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.textoBadge, { color: estadoInfo.color }]}
+                  >
                     {estadoInfo.label}
                   </Text>
                 </View>
@@ -157,16 +209,13 @@ export default function ReclamoScreen() {
   );
 }
 
- const colorScheme = useColorScheme();
+const colorScheme = useColorScheme();
 
-const colores = obtenerColores(
-  colorScheme === "dark" ? "dark" : "light"
-);
+const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
 const coloresEstado = obtenerColoresEstado(
-  colorScheme === "dark" ? "dark" : "light"
+  colorScheme === "dark" ? "dark" : "light",
 );
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
     backgroundColor: colores.fondo,
@@ -250,5 +299,4 @@ const styles = StyleSheet.create({
     ...tipografia.textoSecundario,
     fontWeight: pesosFuente.seminegrita,
   },
-
 });
