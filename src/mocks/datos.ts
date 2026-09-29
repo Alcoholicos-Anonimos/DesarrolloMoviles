@@ -163,7 +163,7 @@ export const MOCK_USUARIOS: Usuario[] = [
     email: 'vecino@mail.com',
     telefono: null,
     rol: 'vecino',
-    zonaId: 'null',
+    zonaId: null,
     avisosActivos: true,
     creadoEn: '2026-08-01T10:00:00-03:00',
   },
