@@ -97,3 +97,8 @@ export interface ApiRespuestaExitosa<T> {
     porPagina: number;
   };
 }
+
+export interface Sesion {
+  token: string;
+  usuario: Usuario;
+}

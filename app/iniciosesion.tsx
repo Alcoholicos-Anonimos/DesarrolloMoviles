@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { authService } from "@/src/servicios/auth";
+import { useAuth } from "@/src/contexto/AuthContext";
 
 import {
   obtenerColores,
@@ -37,6 +37,7 @@ export default function InicioSesionScreen() {
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const styles = crearStyles(tema);
+  const { iniciarSesion } = useAuth();
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,8 +55,7 @@ export default function InicioSesionScreen() {
 
     setCargando(true);
     try {
-      await authService.iniciarSesion(email, contrasena);
-      router.replace("/(tabs)/reclamo"); // replace: "atrás" no vuelve al login
+      await iniciarSesion(email, contrasena);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
     } finally {

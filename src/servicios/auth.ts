@@ -1,11 +1,12 @@
-import { ApiRespuestaExitosa, Usuario } from '../tipos';
+import { ApiRespuestaExitosa, Sesion } from '../tipos';
 import { MOCK_CONTRASENAS, MOCK_USUARIOS } from '../mocks/datos';
 
 export const authService = {
-    iniciarSesion: async (
+  // Valida email y contraseña (simulando una petición a la API)
+  iniciarSesion: async (
     email: string,
     contrasena: string
-  ): Promise<ApiRespuestaExitosa<Usuario>> => {
+  ): Promise<ApiRespuestaExitosa<Sesion>> => {
     await new Promise((res) => setTimeout(res, 800)); // Latencia
 
     const usuario = MOCK_USUARIOS.find(
@@ -16,6 +17,9 @@ export const authService = {
       throw new Error('Email o contraseña incorrectos.');
     }
 
-    return { datos: usuario };
+    // Token inventado: (la API real va a devolver uno propio)
+    const token = `mock-token-${usuario.id}-${Date.now()}`;
+
+    return { datos: { token, usuario } };
   },
 };
