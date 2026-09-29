@@ -1,5 +1,4 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -152,24 +151,6 @@ export default function InicioSesionScreen() {
             )}
           </Pressable>
 
-          {/* SEPARADOR */}
-          <View style={styles.separador}>
-            <View style={styles.linea} />
-            <Text style={styles.textoSeparador}>o</Text>
-            <View style={styles.linea} />
-          </View>
-
-          {/* REPORTAR SIN CUENTA */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.botonSecundario,
-              pressed && styles.botonPresionado,
-            ]}
-            onPress={() => router.push("/nuevo-reporte")}
-          >
-            <Ionicons name="megaphone-outline" size={18} color={colores.texto} />
-            <Text style={styles.textoBotonSecundario}>Reportar sin cuenta</Text>
-          </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -295,38 +276,5 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       color: colores.blanco,
     },
 
-    // Separador
-    separador: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginVertical: espaciados.muyGrande,
-    },
-    linea: {
-      flex: 1,
-      height: 1,
-      backgroundColor: colores.bordeSuave,
-    },
-    textoSeparador: {
-      ...tipografia.textoSecundario,
-      color: colores.textoSecundario,
-      marginHorizontal: espaciados.medio,
-    },
-
-    // Botón secundario
-    botonSecundario: {
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "center",
-      gap: espaciados.pequeno,
-      borderWidth: 1,
-      borderColor: colores.borde,
-      borderRadius: radios.redondo,
-      paddingVertical: espaciados.medio,
-    },
-    textoBotonSecundario: {
-      ...tipografia.texto,
-      fontWeight: pesosFuente.medio,
-      color: colores.texto,
-    },
   });
 };

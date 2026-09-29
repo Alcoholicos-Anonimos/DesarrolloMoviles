@@ -25,7 +25,10 @@ import { router } from "expo-router";
 import { Link } from "expo-router";
 import { useAuth } from "@/src/contexto/AuthContext";
 // Función auxiliar para mapear el color y texto según el estado
-const obtenerInfoEstado = (estado: EstadoReporte) => {
+const obtenerInfoEstado = (
+  estado: EstadoReporte,
+  coloresEstado: ReturnType<typeof obtenerColoresEstado>,
+) => {
   switch (estado) {
     case "asignado":
       return {
@@ -69,6 +72,12 @@ export default function ReclamoScreen() {
   const [tipos, setTipos] = useState<TipoDeReporte[]>([]);
   const [cargando, setCargando] = useState(true);
   const { cerrarSesion } = useAuth();
+
+  const colorScheme = useColorScheme();
+  const tema = colorScheme === "dark" ? "dark" : "light";
+  const colores = obtenerColores(tema);
+  const coloresEstado = obtenerColoresEstado(tema);
+  const styles = crearStyles(tema);
 
   const confirmarCerrarSesion = () => {
     Alert.alert("Cerrar sesión", "¿Querés salir de tu cuenta?", [
@@ -152,7 +161,7 @@ export default function ReclamoScreen() {
           ItemSeparatorComponent={() => <View style={styles.separador} />}
           renderItem={({ item }) => {
             const tipoInfo = obtenerTipo(item.tipoId);
-            const estadoInfo = obtenerInfoEstado(item.estado);
+            const estadoInfo = obtenerInfoEstado(item.estado, coloresEstado);
 
             return (
               <Pressable
@@ -209,13 +218,10 @@ export default function ReclamoScreen() {
   );
 }
 
-const colorScheme = useColorScheme();
+const crearStyles = (tema: "light" | "dark") => {
+  const colores = obtenerColores(tema);
 
-const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
-const coloresEstado = obtenerColoresEstado(
-  colorScheme === "dark" ? "dark" : "light",
-);
-const styles = StyleSheet.create({
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colores.fondo,
@@ -300,3 +306,4 @@ const styles = StyleSheet.create({
     fontWeight: pesosFuente.seminegrita,
   },
 });
+};

@@ -34,7 +34,10 @@ function urlQR(texto: string, tamano = 200) {
 export default function DetalleReporte(){
   const colorScheme = useColorScheme();
 
-  const styles = crearStyles(colorScheme ?? 'light'); //Creamos el estilo segun el color del modo del dispositivo 
+  const tema = colorScheme === "dark" ? "dark" : "light";
+  const colores = obtenerColores(tema);
+  const coloresEstado = obtenerColoresEstado(tema);
+  const styles = crearStyles(tema); //Creamos el estilo segun el color del modo del dispositivo
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [reporte, setReporte] = useState<Reporte | null>(null);
@@ -210,17 +213,6 @@ export default function DetalleReporte(){
     </SafeAreaView>
   );
 }
-
-const colorScheme = useColorScheme();
-
-const colores = obtenerColores(
-  colorScheme === "dark" ? "dark" : "light"
-);
-
-
-const coloresEstado = obtenerColoresEstado(
-  colorScheme === "dark" ? "dark" : "light"
-);
 
 const crearStyles = (colorScheme: "light" | "dark") => {
   const colores = obtenerColores(colorScheme);
