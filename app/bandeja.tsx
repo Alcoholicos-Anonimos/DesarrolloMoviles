@@ -14,7 +14,15 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAuth } from "@/src/contexto/AuthContext";
 import { bandejaService } from "@/src/servicios/bandeja";
 import { reportesService } from "@/src/servicios/reportes";
-import { Cuadrilla, EstadoReporte, Reporte, TipoDeReporte, Zona } from "@/src/tipos";
+import { FiltrosBandeja } from "@/src/servicios/bandeja";
+import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
+import {
+  Cuadrilla,
+  EstadoReporte,
+  Reporte,
+  TipoDeReporte,
+  Zona,
+} from "@/src/tipos";
 import {
   espaciados,
   obtenerColores,
@@ -49,18 +57,31 @@ export default function BandejaScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const zonaId = usuario?.zonaId ?? null;
+  const zonaPorDefecto = usuario?.zonaId ?? null;
+  const [filtros, setFiltros] = useState<FiltrosBandeja>({
+    zonaId: zonaPorDefecto,
+    estado: null,
+    tipoId: null,
+  });
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+
+  // ¿Está viendo algo distinto a la vista por defecto?
+  const hayFiltrosActivos =
+    filtros.estado !== null ||
+    filtros.tipoId !== null ||
+    filtros.zonaId !== zonaPorDefecto;
 
   // Trae todo lo que necesita la pantalla, siempre por servicios
   const cargar = useCallback(async () => {
     setError(null);
     try {
-      const [respReportes, respTipos, respCuadrillas, respZonas] = await Promise.all([
-        bandejaService.listar({ zonaId, estado: null, tipoId: null }),
-        reportesService.obtenerTipos(),
-        bandejaService.obtenerCuadrillas(null),
-        bandejaService.obtenerZonas(),
-      ]);
+      const [respReportes, respTipos, respCuadrillas, respZonas] =
+        await Promise.all([
+          bandejaService.listar(filtros),
+          reportesService.obtenerTipos(),
+          bandejaService.obtenerCuadrillas(null),
+          bandejaService.obtenerZonas(),
+        ]);
       setReportes(respReportes.datos);
       setTipos(respTipos);
       setCuadrillas(respCuadrillas);
@@ -71,7 +92,7 @@ export default function BandejaScreen() {
       setCargando(false);
       setRefrescando(false);
     }
-  }, [zonaId]);
+  }, [filtros]);
 
   useEffect(() => {
     cargar();
@@ -82,7 +103,14 @@ export default function BandejaScreen() {
     cargar();
   };
 
-  const nombreZona = zonas.find((z) => z.id === zonaId)?.nombre ?? "Todas las zonas";
+  const nombreZona =
+    zonas.find((z) => z.id === filtros.zonaId)?.nombre ?? "Todas las zonas";
+
+  const aplicarFiltros = (nuevos: FiltrosBandeja) => {
+    setMostrarFiltros(false);
+    setCargando(true);
+    setFiltros(nuevos);
+  };
 
   const confirmarCerrarSesion = () => {
     Alert.alert("Cerrar sesión", "¿Querés salir de tu cuenta?", [
@@ -103,7 +131,9 @@ export default function BandejaScreen() {
     const original = item.duplicadoDe
       ? reportes.find((r) => r.id === item.duplicadoDe)
       : null;
-    const accionPrincipal = item.cuadrillaId ? "Cambiar estado" : "Asignar cuadrilla";
+    const accionPrincipal = item.cuadrillaId
+      ? "Cambiar estado"
+      : "Asignar cuadrilla";
 
     return (
       <View style={styles.tarjeta}>
@@ -124,7 +154,8 @@ export default function BandejaScreen() {
 
         {item.adhesiones > 0 && (
           <Text style={styles.detalle}>
-            {item.adhesiones} vecino{item.adhesiones === 1 ? "" : "s"} se sumaron
+            {item.adhesiones} vecino{item.adhesiones === 1 ? "" : "s"} se
+            sumaron
           </Text>
         )}
 
@@ -136,13 +167,19 @@ export default function BandejaScreen() {
 
         <View style={styles.filaBotones}>
           <Pressable
-            style={({ pressed }) => [styles.botonTarjeta, pressed && styles.presionado]}
+            style={({ pressed }) => [
+              styles.botonTarjeta,
+              pressed && styles.presionado,
+            ]}
             onPress={() => proximamente(accionPrincipal)}
           >
             <Text style={styles.textoBotonTarjeta}>{accionPrincipal}</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.botonTarjeta, pressed && styles.presionado]}
+            style={({ pressed }) => [
+              styles.botonTarjeta,
+              pressed && styles.presionado,
+            ]}
             onPress={() => proximamente("Duplicado")}
           >
             <Text style={styles.textoBotonTarjeta}>Duplicado</Text>
@@ -161,11 +198,17 @@ export default function BandejaScreen() {
         </Text>
         <View style={styles.filaIconos}>
           <Pressable
-            onPress={() => proximamente("Filtros")}
+            onPress={() => setMostrarFiltros(true)}
             hitSlop={8}
-            accessibilityLabel="Filtros"
+            accessibilityLabel={
+              hayFiltrosActivos ? "Filtros (hay filtros activos)" : "Filtros"
+            }
           >
-            <Ionicons name="options-outline" size={26} color={colores.texto} />
+            <Ionicons
+              name={hayFiltrosActivos ? "options" : "options-outline"}
+              size={26}
+              color={colores.texto}
+            />
           </Pressable>
           <Pressable
             onPress={confirmarCerrarSesion}
@@ -198,10 +241,23 @@ export default function BandejaScreen() {
           refreshing={refrescando}
           onRefresh={refrescar}
           ListEmptyComponent={
-            <Text style={styles.textoVacio}>No hay reportes en tu zona.</Text>
+            <Text style={styles.textoVacio}>
+              {hayFiltrosActivos
+                ? "No hay reportes con esos filtros."
+                : "No hay reportes en tu zona."}
+            </Text>
           }
         />
       )}
+      <ModalFiltros
+        visible={mostrarFiltros}
+        filtros={filtros}
+        zonaPorDefecto={zonaPorDefecto}
+        tipos={tipos}
+        zonas={zonas}
+        onAplicar={aplicarFiltros}
+        onCerrar={() => setMostrarFiltros(false)}
+      />
     </SafeAreaView>
   );
 }
