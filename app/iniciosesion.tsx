@@ -1,5 +1,4 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
-import Octicons from '@expo/vector-icons/Octicons';
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -81,7 +80,7 @@ export default function InicioSesionScreen() {
           {/* ENCABEZADO */}
           <View style={styles.encabezado}>
             <View style={styles.logo}>
-                <Octicons name="report" size={32} color={colores.blanco} />
+              <Ionicons name="megaphone" size={32} color={colores.blanco} />
             </View>
             <Text style={styles.titulo}>Reporte Ciudadano</Text>
             <Text style={styles.subtitulo}>Municipalidad de Gualeguaychú</Text>
