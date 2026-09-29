@@ -1,4 +1,4 @@
-import { CambioDeEstado, Reporte, TipoDeReporte } from '../tipos';
+import { CambioDeEstado, Reporte, TipoDeReporte, Usuario } from '../tipos';
 
 export const MOCK_TIPOS: TipoDeReporte[] = [
   { id: 'tip-bache', nombre: 'Bache', icono: 'warning-outline', color: '#EF4444', areaResponsable: 'Obras Públicas' },
@@ -74,3 +74,32 @@ export const CAMBIO_ESTADO : CambioDeEstado[]=[
   }
 
 ];
+
+export const MOCK_USUARIOS: Usuario[] = [
+  {
+    id: 'usr-084',
+    nombre: 'Vecino de Prueba',
+    email: 'vecino@mail.com',
+    telefono: null,
+    rol: 'vecino',
+    zonaId: 'zon-norte',
+    avisosActivos: true,
+    creadoEn: '2026-08-01T10:00:00-03:00',
+  },
+  {
+    id: 'usr-003',
+    nombre: 'Operador Municipal',
+    email: 'operador@muni.gob.ar',
+    telefono: null,
+    rol: 'operador',
+    zonaId: null,
+    avisosActivos: false,
+    creadoEn: '2026-07-15T09:00:00-03:00',
+  },
+];
+
+// Contraseñas de prueba (solo para el mock, una API real nunca las devuelve)
+export const MOCK_CONTRASENAS: Record<string, string> = {
+  'usr-084': '123456',
+  'usr-003': '123456',
+};
