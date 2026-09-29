@@ -18,6 +18,7 @@ import { FiltrosBandeja } from "@/src/servicios/bandeja";
 import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
 import { ModalAsignarCuadrilla } from "@/components/bandeja/ModalAsignarCuadrilla";
 import { ModalCambiarEstado } from "@/components/bandeja/ModalCambiarEstado";
+import { ModalDuplicado } from "@/components/bandeja/ModalDuplicado";
 import {
   Cuadrilla,
   EstadoReporte,
@@ -68,6 +69,7 @@ export default function BandejaScreen() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [reporteAsignar, setReporteAsignar] = useState<Reporte | null>(null);
   const [reporteEstado, setReporteEstado] = useState<Reporte | null>(null);
+  const [reporteDuplicado, setReporteDuplicado] = useState<Reporte | null>(null);
 
   // ¿Está viendo algo distinto a la vista por defecto?
   const hayFiltrosActivos =
@@ -123,10 +125,6 @@ export default function BandejaScreen() {
     ]);
   };
 
-  // PROVISORIO: las acciones se conectan en el paso 5
-  const proximamente = (accion: string) => {
-    Alert.alert("Próximamente", `"${accion}" se agrega en el próximo paso.`);
-  };
 
   const renderTarjeta = ({ item }: { item: Reporte }) => {
     const tipo = tipos.find((t) => t.id === item.tipoId);
@@ -190,15 +188,18 @@ export default function BandejaScreen() {
           >
             <Text style={styles.textoBotonTarjeta}>{accionPrincipal}</Text>
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.botonTarjeta,
-              pressed && styles.presionado,
-            ]}
-            onPress={() => proximamente("Duplicado")}
-          >
-            <Text style={styles.textoBotonTarjeta}>Duplicado</Text>
-          </Pressable>
+          {/* Si ya es duplicado de otro, no tiene sentido volver a marcarlo */}
+          {!item.duplicadoDe && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonTarjeta,
+                pressed && styles.presionado,
+              ]}
+              onPress={() => setReporteDuplicado(item)}
+            >
+              <Text style={styles.textoBotonTarjeta}>Duplicado</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     );
@@ -288,6 +289,17 @@ export default function BandejaScreen() {
         onCerrar={() => setReporteEstado(null)}
         onListo={() => {
           setReporteEstado(null);
+          cargar();
+        }}
+      />
+
+      <ModalDuplicado
+        reporte={reporteDuplicado}
+        tipos={tipos}
+        operadorId={usuario?.id ?? ""}
+        onCerrar={() => setReporteDuplicado(null)}
+        onListo={() => {
+          setReporteDuplicado(null);
           cargar();
         }}
       />
