@@ -1,80 +1,134 @@
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import Ionicons from "@react-native-vector-icons/ionicons";
+import Octicons from '@expo/vector-icons/Octicons';
+import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 import {
-    espaciados,
-    obtenerColores,
-    pesosFuente,
-    radios,
-    tipografia,
+  obtenerColores,
+  espaciados,
+  radios,
+  tipografia,
+  pesosFuente,
 } from "@/styles/theme";
 
 export default function InicioSesionScreen() {
-  const [texto, setTexto] = useState("");
-  const [contraseña, setContraseña] = useState("");
-  const [mostrarContraseña, setMostrarContraseña] = useState(false);
+  const [email, setEmail] = useState("");
+  const [contrasena, setContrasena] = useState("");
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
 
   const colorScheme = useColorScheme();
-  const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
-  const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
+  const tema = colorScheme === "dark" ? "dark" : "light";
+  const colores = obtenerColores(tema);
+  const styles = crearStyles(tema);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.contenido}>
-        <Text style={styles.titulo}>Iniciar sesión</Text>
-
-        {/* EMAIL */}
-        <View style={styles.campo}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={texto}
-            onChangeText={setTexto}
-            placeholder="Escribí tu email"
-            placeholderTextColor={colores.textoSuave}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        {/* CONTRASEÑA */}
-        <View style={styles.campo}>
-          <Text style={styles.label}>Contraseña</Text>
-          <View style={styles.inputContraseña}>
-            <TextInput
-              style={styles.inputTextoContraseña}
-              value={contraseña}
-              onChangeText={setContraseña}
-              placeholder="Escribí tu contraseña"
-              placeholderTextColor={colores.textoSuave}
-              secureTextEntry={!mostrarContraseña}
-            />
-            <Pressable
-              onPress={() => setMostrarContraseña(!mostrarContraseña)}
-              style={styles.botonOjo}
-            >
-              <Ionicons
-                name={mostrarContraseña ? "eye-off" : "eye"}
-                size={20}
-                color={colores.textoSecundario}
-              />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* BOTÓN */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.boton,
-            pressed && styles.botonPresionado,
-          ]}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.contenido}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.textoBoton}>Iniciar sesión</Text>
-        </Pressable>
-      </View>
+          {/* ENCABEZADO */}
+          <View style={styles.encabezado}>
+            <View style={styles.logo}>
+                <Octicons name="report" size={32} color={colores.blanco} />
+            </View>
+            <Text style={styles.titulo}>Reporte Ciudadano</Text>
+            <Text style={styles.subtitulo}>Municipalidad de Gualeguaychú</Text>
+          </View>
+
+          {/* EMAIL */}
+          <View style={styles.campo}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="nombre@mail.com"
+              placeholderTextColor={colores.textoSuave}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+          </View>
+
+          {/* CONTRASEÑA */}
+          <View style={styles.campo}>
+            <Text style={styles.label}>Contraseña</Text>
+            <View style={styles.inputContrasena}>
+              <TextInput
+                style={styles.inputTextoContrasena}
+                value={contrasena}
+                onChangeText={setContrasena}
+                placeholder="Tu contraseña"
+                placeholderTextColor={colores.textoSuave}
+                secureTextEntry={!mostrarContrasena}
+                autoCapitalize="none"
+              />
+              <Pressable
+                onPress={() => setMostrarContrasena(!mostrarContrasena)}
+                style={styles.botonOjo}
+                hitSlop={8}
+              >
+                <Ionicons
+                  name={mostrarContrasena ? "eye-off" : "eye"}
+                  size={20}
+                  color={colores.textoSecundario}
+                />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* OLVIDÉ MI CONTRASEÑA */}
+          <Pressable style={styles.botonOlvido} hitSlop={8}>
+            <Text style={styles.textoEnlace}>¿Olvidaste tu contraseña?</Text>
+          </Pressable>
+
+          {/* BOTÓN PRINCIPAL */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.boton,
+              pressed && styles.botonPresionado,
+            ]}
+          >
+            <Text style={styles.textoBoton}>Ingresar</Text>
+          </Pressable>
+
+          {/* SEPARADOR */}
+          <View style={styles.separador}>
+            <View style={styles.linea} />
+            <Text style={styles.textoSeparador}>o</Text>
+            <View style={styles.linea} />
+          </View>
+
+          {/* REPORTAR SIN CUENTA */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.botonSecundario,
+              pressed && styles.botonPresionado,
+            ]}
+            onPress={() => router.push("/nuevo-reporte")}
+          >
+            <Ionicons name="megaphone-outline" size={18} color={colores.texto} />
+            <Text style={styles.textoBotonSecundario}>Reportar sin cuenta</Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -83,19 +137,48 @@ const crearStyles = (colorScheme: "light" | "dark") => {
   const colores = obtenerColores(colorScheme);
 
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colores.fondo },
-    contenido: {
+    container: {
       flex: 1,
+      backgroundColor: colores.fondo,
+    },
+
+    contenido: {
+      flexGrow: 1,
       justifyContent: "center",
       paddingHorizontal: espaciados.extraGrande,
+      paddingVertical: espaciados.enorme,
+    },
+
+    // Encabezado
+    encabezado: {
+      alignItems: "center",
+      marginBottom: espaciados.enorme,
+    },
+    logo: {
+      width: 64,
+      height: 64,
+      borderRadius: radios.grande,
+      backgroundColor: colores.primario,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: espaciados.grande,
     },
     titulo: {
       ...tipografia.tituloPantalla,
       color: colores.texto,
       textAlign: "center",
-      marginBottom: espaciados.muyGrande,
     },
-    campo: { marginBottom: espaciados.grande },
+    subtitulo: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
+      textAlign: "center",
+      marginTop: espaciados.xs,
+    },
+
+    // Campos
+    campo: {
+      marginBottom: espaciados.grande,
+    },
     label: {
       ...tipografia.texto,
       fontWeight: pesosFuente.medio,
@@ -112,7 +195,7 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       paddingHorizontal: espaciados.medio,
       paddingVertical: espaciados.medio,
     },
-    inputContraseña: {
+    inputContrasena: {
       flexDirection: "row",
       alignItems: "center",
       borderWidth: 1,
@@ -120,7 +203,7 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       backgroundColor: colores.superficie,
       borderRadius: radios.pequeno,
     },
-    inputTextoContraseña: {
+    inputTextoContrasena: {
       ...tipografia.texto,
       color: colores.texto,
       flex: 1,
@@ -131,18 +214,66 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       paddingHorizontal: espaciados.medio,
       paddingVertical: espaciados.medio,
     },
+
+    // Link
+    botonOlvido: {
+      alignSelf: "flex-end",
+      marginBottom: espaciados.grande,
+    },
+    textoEnlace: {
+      ...tipografia.textoSecundario,
+      color: colores.enlace,
+      fontWeight: pesosFuente.medio,
+    },
+
+    // Botón principal
     boton: {
       backgroundColor: colores.primario,
       borderRadius: radios.redondo,
       paddingVertical: espaciados.medio,
       alignItems: "center",
-      marginTop: espaciados.medio,
     },
-    botonPresionado: { opacity: 0.7 },
+    botonPresionado: {
+      opacity: 0.7,
+    },
     textoBoton: {
       ...tipografia.texto,
       fontWeight: pesosFuente.medio,
       color: colores.blanco,
+    },
+
+    // Separador
+    separador: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: espaciados.muyGrande,
+    },
+    linea: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colores.bordeSuave,
+    },
+    textoSeparador: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
+      marginHorizontal: espaciados.medio,
+    },
+
+    // Botón secundario
+    botonSecundario: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: espaciados.pequeno,
+      borderWidth: 1,
+      borderColor: colores.borde,
+      borderRadius: radios.redondo,
+      paddingVertical: espaciados.medio,
+    },
+    textoBotonSecundario: {
+      ...tipografia.texto,
+      fontWeight: pesosFuente.medio,
+      color: colores.texto,
     },
   });
 };
