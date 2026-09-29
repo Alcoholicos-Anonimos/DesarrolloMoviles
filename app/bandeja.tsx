@@ -16,6 +16,7 @@ import { bandejaService } from "@/src/servicios/bandeja";
 import { reportesService } from "@/src/servicios/reportes";
 import { FiltrosBandeja } from "@/src/servicios/bandeja";
 import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
+import { ModalAsignarCuadrilla } from "@/components/bandeja/ModalAsignarCuadrilla";
 import {
   Cuadrilla,
   EstadoReporte,
@@ -64,6 +65,7 @@ export default function BandejaScreen() {
     tipoId: null,
   });
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [reporteAsignar, setReporteAsignar] = useState<Reporte | null>(null);
 
   // ¿Está viendo algo distinto a la vista por defecto?
   const hayFiltrosActivos =
@@ -171,7 +173,11 @@ export default function BandejaScreen() {
               styles.botonTarjeta,
               pressed && styles.presionado,
             ]}
-            onPress={() => proximamente(accionPrincipal)}
+            onPress={() =>
+              item.cuadrillaId
+                ? proximamente(accionPrincipal)
+                : setReporteAsignar(item)
+            }
           >
             <Text style={styles.textoBotonTarjeta}>{accionPrincipal}</Text>
           </Pressable>
@@ -257,6 +263,15 @@ export default function BandejaScreen() {
         zonas={zonas}
         onAplicar={aplicarFiltros}
         onCerrar={() => setMostrarFiltros(false)}
+      />
+      <ModalAsignarCuadrilla
+        reporte={reporteAsignar}
+        operadorId={usuario?.id ?? ""}
+        onCerrar={() => setReporteAsignar(null)}
+        onListo={() => {
+          setReporteAsignar(null);
+          cargar();
+        }}
       />
     </SafeAreaView>
   );
