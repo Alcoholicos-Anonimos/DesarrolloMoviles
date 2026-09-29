@@ -9,7 +9,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { espaciados, estiloMapaOscuro, estilosComunes, obtenerColores, obtenerColoresEstado, pesosFuente, radios, tipografia } from "@/styles/theme";
 
-const obtenerInfoEstado = (estado: EstadoReporte) => {
+const obtenerInfoEstado = (estado: EstadoReporte, coloresEstado: ReturnType<typeof obtenerColoresEstado>) => {
   switch (estado) {
     case 'asignado':
       return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
@@ -39,7 +39,10 @@ const obtenerIcono = (tipoId: string) => {
 export default function MapaScreen() {
   const colorScheme = useColorScheme();
   //Creamos el estilo segun el color del modo del dispositivo 
-  const styles = crearStyles(colorScheme ?? 'light');
+  const tema = colorScheme === "dark" ? "dark" : "light";
+  const colores = obtenerColores(tema);
+  const coloresEstado = obtenerColoresEstado(tema);
+  const styles = crearStyles(tema);
 
   //Reportes generados por los usuarios
   const [reportes, setReportes] = useState<Reporte[]>([]);
@@ -123,10 +126,10 @@ export default function MapaScreen() {
               <Marker
                 key={r.id} coordinate={{ latitude: r.coordenadas.latitud, longitude: r.coordenadas.longitud, }}
                 title={r.descripcion === null ? "Sin descripción" : r.descripcion}
-                description={obtenerInfoEstado(r.estado).label}
-                pinColor={obtenerInfoEstado(r.estado).color} >
+                description={obtenerInfoEstado(r.estado, coloresEstado).label}
+                pinColor={obtenerInfoEstado(r.estado, coloresEstado).color} >
 
-                <View style={[styles.pin, { backgroundColor: obtenerInfoEstado(r.estado).color },]}  >
+                <View style={[styles.pin, { backgroundColor: obtenerInfoEstado(r.estado, coloresEstado).color },]}  >
                   <Ionicons
                     name={(obtenerIcono(r.tipoId)) as any}
                     size={16}
@@ -155,17 +158,6 @@ export default function MapaScreen() {
     </SafeAreaView>
   );
 }
-const colorScheme = useColorScheme();
-
-const colores = obtenerColores(
-  colorScheme === "dark" ? "dark" : "light"
-);
-
-
-const coloresEstado = obtenerColoresEstado(
-  colorScheme === "dark" ? "dark" : "light"
-);
-
 const crearStyles = (colorScheme: "light" | "dark") => {
   const colores = obtenerColores(colorScheme);
 
