@@ -1,6 +1,14 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { ReactNode } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { espaciados, obtenerColores, radios, tipografia } from "@/styles/theme";
 
@@ -21,7 +29,10 @@ export function HojaInferior({ visible, titulo, subtitulo, onCerrar, children }:
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCerrar}>
-      <View style={styles.contenedor}>
+        <KeyboardAvoidingView
+          style={styles.contenedor}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
         {/* Tocar afuera cierra el panel */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onCerrar} />
 
@@ -38,7 +49,7 @@ export function HojaInferior({ visible, titulo, subtitulo, onCerrar, children }:
 
           {children}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

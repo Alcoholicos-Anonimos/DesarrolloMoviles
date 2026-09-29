@@ -17,6 +17,7 @@ import { reportesService } from "@/src/servicios/reportes";
 import { FiltrosBandeja } from "@/src/servicios/bandeja";
 import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
 import { ModalAsignarCuadrilla } from "@/components/bandeja/ModalAsignarCuadrilla";
+import { ModalCambiarEstado } from "@/components/bandeja/ModalCambiarEstado";
 import {
   Cuadrilla,
   EstadoReporte,
@@ -66,6 +67,7 @@ export default function BandejaScreen() {
   });
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [reporteAsignar, setReporteAsignar] = useState<Reporte | null>(null);
+  const [reporteEstado, setReporteEstado] = useState<Reporte | null>(null);
 
   // ¿Está viendo algo distinto a la vista por defecto?
   const hayFiltrosActivos =
@@ -143,11 +145,18 @@ export default function BandejaScreen() {
           <Text style={styles.tituloTarjeta} numberOfLines={1}>
             {tipo?.nombre ?? "Reporte"} - {item.direccion}
           </Text>
-          <View style={[styles.badge, { backgroundColor: colorEstado.fondo }]}>
+          {/* Tocar el estado también permite cambiarlo (sirve aunque no tenga cuadrilla) */}
+          <Pressable
+            onPress={() => setReporteEstado(item)}
+            hitSlop={8}
+            accessibilityLabel={`Estado: ${ETIQUETA_ESTADO[item.estado]}. Tocá para cambiarlo`}
+            style={[styles.badge, { backgroundColor: colorEstado.fondo }]}
+          >
             <Text style={[styles.textoBadge, { color: colorEstado.texto }]}>
               {ETIQUETA_ESTADO[item.estado]}
             </Text>
-          </View>
+            <Ionicons name="chevron-down" size={14} color={colorEstado.texto} />
+          </Pressable>
         </View>
 
         <Text style={styles.subtitulo}>
@@ -175,7 +184,7 @@ export default function BandejaScreen() {
             ]}
             onPress={() =>
               item.cuadrillaId
-                ? proximamente(accionPrincipal)
+                ? setReporteEstado(item)
                 : setReporteAsignar(item)
             }
           >
@@ -273,6 +282,15 @@ export default function BandejaScreen() {
           cargar();
         }}
       />
+      <ModalCambiarEstado
+        reporte={reporteEstado}
+        operadorId={usuario?.id ?? ""}
+        onCerrar={() => setReporteEstado(null)}
+        onListo={() => {
+          setReporteEstado(null);
+          cargar();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -334,6 +352,9 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       flex: 1,
     },
     badge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
       paddingHorizontal: 10,
       paddingVertical: espaciados.xs,
       borderRadius: radios.pequeno,
