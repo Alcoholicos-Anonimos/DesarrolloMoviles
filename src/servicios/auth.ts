@@ -1,25 +1,7 @@
-import { ApiRespuestaExitosa, Sesion } from '../tipos';
-import { MOCK_CONTRASENAS, MOCK_USUARIOS } from '../mocks/datos';
+import { FuenteAuth } from './fuentes/FuenteAuth';
+import { authMock } from './fuentes/authMock';
+// Cuando llegue la API:
+// import { authApi } from './fuentes/authApi';
 
-export const authService = {
-  // Valida email y contraseña (simulando una petición a la API)
-  iniciarSesion: async (
-    email: string,
-    contrasena: string
-  ): Promise<ApiRespuestaExitosa<Sesion>> => {
-    await new Promise((res) => setTimeout(res, 800)); // Latencia
-
-    const usuario = MOCK_USUARIOS.find(
-      (u) => u.email.toLowerCase() === email.trim().toLowerCase()
-    );
-
-    if (!usuario || MOCK_CONTRASENAS[usuario.id] !== contrasena) {
-      throw new Error('Email o contraseña incorrectos.');
-    }
-
-    // Token inventado: (la API real va a devolver uno propio)
-    const token = `mock-token-${usuario.id}-${Date.now()}`;
-
-    return { datos: { token, usuario } };
-  },
-};
+// Acá se elige de dónde salen los datos. Para pasar a la API se cambia solo esta línea.
+export const authService: FuenteAuth = authMock;

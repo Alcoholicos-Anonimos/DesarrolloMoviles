@@ -1,12 +1,13 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { authService } from "../servicios/auth";
 import { sesionService } from "../servicios/sesion";
-import { Usuario } from "../tipos";
+import { NuevoUsuarioInput, Usuario } from "../tipos";
 
 type AuthContextValor = {
   usuario: Usuario | null;
   cargandoSesion: boolean;
   iniciarSesion: (email: string, contrasena: string) => Promise<Usuario>;
+  registrarse: (datos: NuevoUsuarioInput) => Promise<Usuario>;
   cerrarSesion: () => Promise<void>;
 };
 
@@ -31,6 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return respuesta.datos.usuario;
   };
 
+  // Registrarse deja la sesión iniciada, igual que iniciarSesion
+  const registrarse = async (datos: NuevoUsuarioInput) => {
+    const respuesta = await authService.registrarse(datos);
+    await sesionService.guardar(respuesta.datos);
+    setUsuario(respuesta.datos.usuario);
+    return respuesta.datos.usuario;
+  };
+
   const cerrarSesion = async () => {
     await sesionService.borrar();
     setUsuario(null);
@@ -38,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, cargandoSesion, iniciarSesion, cerrarSesion }}
+      value={{ usuario, cargandoSesion, iniciarSesion, registrarse, cerrarSesion }}
     >
       {children}
     </AuthContext.Provider>

@@ -18,6 +18,7 @@ import {
   tipografia,
   pesosFuente,
   obtenerColoresEstado,
+  tamaniosIconos,
 } from "../../styles/theme";
 import { Reporte, TipoDeReporte, EstadoReporte } from "../../src/tipos";
 import { reportesService } from "../../src/servicios/reportes";
@@ -132,7 +133,7 @@ export default function ReclamoScreen() {
             ]}
             accessibilityLabel="Cerrar sesión"
           >
-            <Ionicons name="log-out-outline" size={26} color={colores.texto} />
+            <Ionicons name="log-out-outline" size={tamaniosIconos.grande} color={colores.texto} />
           </Pressable>
 
           <Link href="/nuevo-reporte" asChild>

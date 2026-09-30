@@ -33,6 +33,7 @@ import {
   pesosFuente,
   radios,
   tipografia,
+  tamaniosIconos,
 } from "@/styles/theme";
 
 const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
@@ -153,7 +154,7 @@ export default function BandejaScreen() {
             <Text style={[styles.textoBadge, { color: colorEstado.texto }]}>
               {ETIQUETA_ESTADO[item.estado]}
             </Text>
-            <Ionicons name="chevron-down" size={14} color={colorEstado.texto} />
+            <Ionicons name="chevron-down" size={tamaniosIconos.pequeno} color={colorEstado.texto} />
           </Pressable>
         </View>
 
@@ -222,7 +223,7 @@ export default function BandejaScreen() {
           >
             <Ionicons
               name={hayFiltrosActivos ? "options" : "options-outline"}
-              size={26}
+              size={tamaniosIconos.grande}
               color={colores.texto}
             />
           </Pressable>
@@ -231,7 +232,7 @@ export default function BandejaScreen() {
             hitSlop={8}
             accessibilityLabel="Cerrar sesión"
           >
-            <Ionicons name="log-out-outline" size={26} color={colores.texto} />
+            <Ionicons name="log-out-outline" size={tamaniosIconos.grande} color={colores.texto} />
           </Pressable>
         </View>
       </View>

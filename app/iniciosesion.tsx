@@ -1,4 +1,5 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +23,7 @@ import {
   radios,
   tipografia,
   pesosFuente,
+  tamaniosIconos,
 } from "@/styles/theme";
 
 // Formato básico de email: algo@algo.algo
@@ -79,7 +81,7 @@ export default function InicioSesionScreen() {
           {/* ENCABEZADO */}
           <View style={styles.encabezado}>
             <View style={styles.logo}>
-              <Ionicons name="megaphone" size={32} color={colores.blanco} />
+              <Ionicons name="megaphone" size={tamaniosIconos.extraGrande} color={colores.blanco} />
             </View>
             <Text style={styles.titulo}>Reporte Ciudadano</Text>
             <Text style={styles.subtitulo}>Municipalidad de Gualeguaychú</Text>
@@ -120,7 +122,7 @@ export default function InicioSesionScreen() {
               >
                 <Ionicons
                   name={mostrarContrasena ? "eye-off" : "eye"}
-                  size={20}
+                  size={tamaniosIconos.medio}
                   color={colores.textoSecundario}
                 />
               </Pressable>
@@ -151,6 +153,13 @@ export default function InicioSesionScreen() {
             )}
           </Pressable>
 
+          {/* REGISTRO */}
+          <View style={styles.filaRegistro}>
+            <Text style={styles.textoSecundario}>¿No tenés cuenta?</Text>
+            <Pressable onPress={() => router.push("/registro")} hitSlop={8}>
+              <Text style={styles.textoEnlace}>Registrate</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -248,6 +257,18 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       ...tipografia.textoSecundario,
       color: colores.enlace,
       fontWeight: pesosFuente.medio,
+    },
+
+    // Registro
+    filaRegistro: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: espaciados.xs,
+      marginTop: espaciados.muyGrande,
+    },
+    textoSecundario: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
     },
 
     // Error

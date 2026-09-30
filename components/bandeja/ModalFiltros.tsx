@@ -10,6 +10,7 @@ import {
   pesosFuente,
   radios,
   tipografia,
+  tamaniosIconos,
 } from "@/styles/theme";
 
 const ESTADOS: { valor: EstadoReporte; etiqueta: string }[] = [
@@ -75,7 +76,7 @@ export function ModalFiltros({
           <View style={styles.encabezado}>
             <Text style={styles.titulo}>Filtros</Text>
             <Pressable onPress={onCerrar} hitSlop={8} accessibilityLabel="Cerrar filtros">
-              <Ionicons name="close" size={26} color={colores.texto} />
+              <Ionicons name="close" size={tamaniosIconos.grande} color={colores.texto} />
             </Pressable>
           </View>
 

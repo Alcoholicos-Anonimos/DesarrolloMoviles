@@ -17,6 +17,7 @@ import {
   pesosFuente,
   radios,
   tipografia,
+  tamaniosIconos,
 } from "@/styles/theme";
 import { HojaInferior } from "./HojaInferior";
 
@@ -99,9 +100,9 @@ export function ModalAsignarCuadrilla({ reporte, operadorId, onCerrar, onListo }
                 {guardandoId === c.id ? (
                   <ActivityIndicator />
                 ) : esLaActual ? (
-                  <Ionicons name="checkmark-circle" size={22} color={colores.texto} />
+                  <Ionicons name="checkmark-circle" size={tamaniosIconos.medio} color={colores.texto} />
                 ) : (
-                  <Ionicons name="chevron-forward" size={20} color={colores.textoSecundario} />
+                  <Ionicons name="chevron-forward" size={tamaniosIconos.medio} color={colores.textoSecundario} />
                 )}
               </Pressable>
             );

@@ -14,7 +14,7 @@ export const coloresClaros = {
 
   primario: "#26215C",
 
- peligro: "#C0392B",
+  peligro: "#C0392B",
   peligroSuave: "#FDECEC",
   textoPeligro: "#C0392B",
 
@@ -57,7 +57,7 @@ export const coloresOscuros = {
   fondoAdvertencia: "#FAEEDA",
   textoAdvertencia: "#633806",
 
-  enlace: "#0C447C",
+  enlace: "#7DB7E8",
 
   blanco: "#FFFFFF",
   negro: "#000000",
@@ -90,6 +90,13 @@ export const tamaniosFuente = {
   grande: 16,
   titulo: 20,
   tituloPantalla: 24,
+};
+
+export const tamaniosIconos = {
+  pequeno: 14,
+  medio: 20,
+  grande: 24,
+  extraGrande: 32,
 };
 
 export const pesosFuente = {
@@ -212,9 +219,7 @@ export const obtenerColores = (tema: "light" | "dark") => {
 };
 
 export const obtenerColoresEstado = (tema: "light" | "dark") => {
-  return tema === "light"
-    ? coloresEstadoClaros
-    : coloresEstadoOscuros;
+  return tema === "light" ? coloresEstadoClaros : coloresEstadoOscuros;
 };
 
 export const estiloMapaOscuro = [
