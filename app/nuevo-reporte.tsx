@@ -1,7 +1,11 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
+import * as Network from "expo-network";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,9 +14,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SelectorContanos } from "../components/reporte/SelectorContanos";
 import { SelectorFoto } from "../components/reporte/SelectorFoto";
 import { SelectorTipoProblema } from "../components/reporte/SelectorTipoProblema";
 import { TarjetaUbicacion } from "../components/reporte/TarjetaUbicacion";
+import { guardarReportePendiente } from "../src/servicios/colaOffline";
+import { reportesService } from "../src/servicios/reportes";
+import { Coordenadas, NuevoReporteInput } from "../src/tipos";
 import {
   espaciados,
   obtenerColores,
@@ -23,12 +31,91 @@ import {
 
 export default function NuevoReporte() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
-  const [foto, setFoto] = useState<string | null>(null);
+  const [fotos, setFotos] = useState<string[]>([]);
+  const [descripcion, setDescripcion] = useState("");
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [ubicacion, setUbicacion] = useState<Coordenadas | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const colorScheme = useColorScheme();
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
 
+  const validarYArmarReporte = (): NuevoReporteInput | null => {
+    if (fotos.length === 0) {
+      Alert.alert("Falta la foto", "Sacá o elegí una foto antes de enviar.");
+      return null;
+    }
+
+    if (!ubicacion) {
+      Alert.alert(
+        "Falta la ubicación",
+        "No pudimos obtener tu ubicación. Activá el permiso e intentá de nuevo.",
+      );
+      return null;
+    }
+
+    if (!descripcion && !audioUri) {
+      Alert.alert(
+        "Falta contarnos qué pasa",
+        "Escribí una descripción o grabá una nota de voz.",
+      );
+      return null;
+    }
+
+    const input: NuevoReporteInput = {
+      tipoId: tipoSeleccionado,
+      descripcion: descripcion || null,
+      audioUrl: audioUri,
+      fotos: fotos.map((uri, indice) => ({
+        id: `foto-${Date.now()}-${indice}`,
+        url: uri,
+        momento: "problema",
+      })),
+      coordenadas: ubicacion,
+      direccion: `${ubicacion.latitud.toFixed(5)}, ${ubicacion.longitud.toFixed(5)}`,
+    };
+
+    return input;
+  };
+
+  const alEnviar = async () => {
+    const input = validarYArmarReporte();
+    if (!input) return;
+
+    setEnviando(true);
+    try {
+      const estadoRed = await Network.getNetworkStateAsync();
+
+      if (!estadoRed.isConnected) {
+        await guardarReportePendiente(input);
+        Alert.alert(
+          "Reporte guardado",
+          "No hay conexión ahora. Se va a enviar solo cuando vuelva la señal.",
+          [{ text: "Aceptar", onPress: () => router.back() }],
+        );
+        return;
+      }
+
+      const respuesta = await reportesService.crearReporte(input);
+      Alert.alert(
+        "Reporte enviado",
+        `Tu número de seguimiento es ${respuesta.datos.codigo}`,
+        [{ text: "Aceptar", onPress: () => router.back() }],
+      );
+    } catch {
+      // Si falla igual habiendo conexión (por ejemplo, el servidor no responde),
+      // lo guardamos para reintentar más tarde en vez de perderlo.
+      await guardarReportePendiente(input);
+      Alert.alert(
+        "No se pudo enviar ahora",
+        "Guardamos tu reporte y lo vamos a reintentar automáticamente.",
+        [{ text: "Aceptar", onPress: () => router.back() }],
+      );
+    } finally {
+      setEnviando(false);
+    }
+  };
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -38,36 +125,48 @@ export default function NuevoReporte() {
         <Text style={styles.headerTitle}>Nuevo reporte</Text>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <SelectorTipoProblema
-          tipoSeleccionado={tipoSeleccionado}
-          onSeleccionar={setTipoSeleccionado}
-        />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <SelectorTipoProblema
+            tipoSeleccionado={tipoSeleccionado}
+            onSeleccionar={setTipoSeleccionado}
+          />
 
-        <SelectorFoto foto={foto} onFotoChange={setFoto} />
+          <SelectorFoto fotos={fotos} onFotosChange={setFotos} />
 
-        <TarjetaUbicacion />
+          <TarjetaUbicacion
+            ubicacion={ubicacion}
+            onUbicacionChange={setUbicacion}
+          />
 
-        {/* CONTANOS */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contanos</Text>
-          <View style={styles.filaBotonesGrandes}>
-            <Pressable style={styles.botonContanos}>
-              <Ionicons name="pencil-outline" size={18} color={colores.texto} />
-              <Text style={styles.botonGrandeText}>Escribir</Text>
-            </Pressable>
-            <Pressable style={styles.botonContanos}>
-              <Ionicons name="mic-outline" size={18} color={colores.texto} />
-              <Text style={styles.botonGrandeText}>Grabar audio</Text>
-            </Pressable>
-          </View>
-        </View>
+          <SelectorContanos
+            descripcion={descripcion}
+            onDescripcionChange={setDescripcion}
+            audioUri={audioUri}
+            onAudioChange={setAudioUri}
+          />
 
-        {/* ENVIAR */}
-        <Pressable style={styles.botonEnviar}>
-          <Text style={styles.botonEnviarText}>Enviar</Text>
-        </Pressable>
-      </ScrollView>
+          <Pressable
+            style={[
+              styles.botonEnviar,
+              enviando && styles.botonEnviarDeshabilitado,
+            ]}
+            onPress={alEnviar}
+            disabled={enviando}
+          >
+            <Text style={styles.botonEnviarText}>
+              {enviando ? "Enviando..." : "Enviar"}
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -102,31 +201,15 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       color: colores.texto,
       marginBottom: espaciados.medio,
     },
-    filaBotonesGrandes: {
-      flexDirection: "row",
-      gap: espaciados.pequeno,
-    },
-    botonContanos: {
-      flex: 1,
-      flexDirection: "row",
-      borderWidth: 1,
-      borderColor: colores.borde,
-      borderRadius: radios.redondo,
-      paddingVertical: espaciados.medio,
-      justifyContent: "center",
-      alignItems: "center",
-      gap: espaciados.pequeno,
-    },
-    botonGrandeText: {
-      ...tipografia.texto,
-      color: colores.texto,
-    },
     botonEnviar: {
       backgroundColor: colores.texto,
       borderRadius: radios.redondo,
       paddingVertical: espaciados.grande,
       alignItems: "center",
       marginTop: espaciados.muyGrande,
+    },
+    botonEnviarDeshabilitado: {
+      opacity: 0.6,
     },
     botonEnviarText: {
       ...tipografia.texto,
