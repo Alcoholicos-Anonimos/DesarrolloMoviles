@@ -102,3 +102,11 @@ export interface Sesion {
   token: string;
   usuario: Usuario;
 }
+
+// Datos que completa el vecino al registrarse (el rol no se elige: siempre "vecino")
+export interface NuevoUsuarioInput {
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  contrasena: string;
+}
