@@ -22,6 +22,7 @@ import {
   radios,
   tipografia,
   pesosFuente,
+  tamaniosIconos,
 } from "@/styles/theme";
 
 // Formato básico de email: algo@algo.algo
@@ -79,7 +80,7 @@ export default function InicioSesionScreen() {
           {/* ENCABEZADO */}
           <View style={styles.encabezado}>
             <View style={styles.logo}>
-              <Ionicons name="megaphone" size={32} color={colores.blanco} />
+              <Ionicons name="megaphone" size={tamaniosIconos.extraGrande} color={colores.blanco} />
             </View>
             <Text style={styles.titulo}>Reporte Ciudadano</Text>
             <Text style={styles.subtitulo}>Municipalidad de Gualeguaychú</Text>
@@ -120,7 +121,7 @@ export default function InicioSesionScreen() {
               >
                 <Ionicons
                   name={mostrarContrasena ? "eye-off" : "eye"}
-                  size={20}
+                  size={tamaniosIconos.medio}
                   color={colores.textoSecundario}
                 />
               </Pressable>

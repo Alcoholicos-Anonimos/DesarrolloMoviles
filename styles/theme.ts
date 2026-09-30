@@ -92,6 +92,13 @@ export const tamaniosFuente = {
   tituloPantalla: 24,
 };
 
+export const tamaniosIconos = {
+  pequeno: 14,
+  medio: 20,
+  grande: 24,
+  extraGrande: 32,
+};
+
 export const pesosFuente = {
   normal: "400" as const,
   medio: "500" as const,

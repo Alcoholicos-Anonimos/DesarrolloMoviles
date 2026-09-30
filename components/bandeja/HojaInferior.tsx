@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { espaciados, obtenerColores, radios, tipografia } from "@/styles/theme";
+import { espaciados, obtenerColores, radios, tipografia, tamaniosIconos } from "@/styles/theme";
 
 type Props = {
   visible: boolean;
@@ -43,7 +43,7 @@ export function HojaInferior({ visible, titulo, subtitulo, onCerrar, children }:
               {subtitulo ? <Text style={styles.subtitulo}>{subtitulo}</Text> : null}
             </View>
             <Pressable onPress={onCerrar} hitSlop={8} accessibilityLabel="Cerrar">
-              <Ionicons name="close" size={26} color={colores.texto} />
+              <Ionicons name="close" size={tamaniosIconos.grande} color={colores.texto} />
             </Pressable>
           </View>
 

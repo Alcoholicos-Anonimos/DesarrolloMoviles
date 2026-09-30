@@ -19,6 +19,7 @@ import {
   pesosFuente,
   radios,
   tipografia,
+  tamaniosIconos,
 } from "@/styles/theme";
 import { HojaInferior } from "./HojaInferior";
 
@@ -129,7 +130,7 @@ export function ModalDuplicado({ reporte, tipos, operadorId, onCerrar, onListo }
                 {guardandoId === r.id ? (
                   <ActivityIndicator />
                 ) : (
-                  <Ionicons name="chevron-forward" size={20} color={colores.textoSecundario} />
+                  <Ionicons name="chevron-forward" size={tamaniosIconos.medio} color={colores.textoSecundario} />
                 )}
               </Pressable>
             );
