@@ -1,46 +1,35 @@
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    useColorScheme,
-    View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
 } from "react-native";
 import MapView, { Marker, MarkerDragStartEndEvent } from "react-native-maps";
+import { Coordenadas } from "../../src/tipos";
 import {
-    espaciados,
-    obtenerColores,
-    radios,
-    tipografia,
+  distanciaEnMetros,
+  formatearDistancia,
+} from "../../src/utilidades/geo";
+import {
+  espaciados,
+  obtenerColores,
+  radios,
+  tipografia,
 } from "../../styles/theme";
 
-type Coordenada = { latitud: number; longitud: number };
+type Props = {
+  ubicacion: Coordenadas | null;
+  onUbicacionChange: (coordenada: Coordenadas | null) => void;
+};
 
-// Fórmula de Haversine: calcula la distancia en metros entre dos puntos GPS.
-function calcularDistanciaEnMetros(a: Coordenada, b: Coordenada) {
-  const radioTierra = 6371000; // metros
-  const rad = (grados: number) => (grados * Math.PI) / 180;
-
-  const dLat = rad(b.latitud - a.latitud);
-  const dLon = rad(b.longitud - a.longitud);
-
-  const sinLat = Math.sin(dLat / 2);
-  const sinLon = Math.sin(dLon / 2);
-
-  const valor =
-    sinLat * sinLat +
-    Math.cos(rad(a.latitud)) * Math.cos(rad(b.latitud)) * sinLon * sinLon;
-
-  const distancia = 2 * radioTierra * Math.asin(Math.sqrt(valor));
-  return Math.round(distancia);
-}
-
-export function TarjetaUbicacion() {
-  const [ubicacionOriginal, setUbicacionOriginal] = useState<Coordenada | null>(
-    null,
-  );
-  const [ubicacionPin, setUbicacionPin] = useState<Coordenada | null>(null);
+export function TarjetaUbicacion({ ubicacion, onUbicacionChange }: Props) {
+  const [ubicacionOriginal, setUbicacionOriginal] =
+    useState<Coordenadas | null>(null);
+  const [precisionGps, setPrecisionGps] = useState<number | null>(null);
+  const [pinFueMovido, setPinFueMovido] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [permisoDenegado, setPermisoDenegado] = useState(false);
 
@@ -63,7 +52,8 @@ export function TarjetaUbicacion() {
         longitud: posicion.coords.longitude,
       };
       setUbicacionOriginal(coordenada);
-      setUbicacionPin(coordenada);
+      onUbicacionChange(coordenada);
+      setPrecisionGps(posicion.coords.accuracy ?? null);
       setCargando(false);
     };
 
@@ -71,16 +61,23 @@ export function TarjetaUbicacion() {
   }, []);
 
   const alSoltarElPin = (evento: MarkerDragStartEndEvent) => {
-    setUbicacionPin({
+    onUbicacionChange({
       latitud: evento.nativeEvent.coordinate.latitude,
       longitud: evento.nativeEvent.coordinate.longitude,
     });
+    setPinFueMovido(true);
   };
 
-  const distancia =
-    ubicacionOriginal && ubicacionPin
-      ? calcularDistanciaEnMetros(ubicacionOriginal, ubicacionPin)
+  const distanciaCorregida =
+    ubicacionOriginal && ubicacion
+      ? distanciaEnMetros(ubicacionOriginal, ubicacion)
       : 0;
+
+  const textoDistancia = pinFueMovido
+    ? `Corregiste el punto ${formatearDistancia(distanciaCorregida)}`
+    : precisionGps
+      ? `A ${formatearDistancia(precisionGps)} de tu ubicación`
+      : "Ubicación desde el GPS";
 
   return (
     <View style={styles.section}>
@@ -97,24 +94,20 @@ export function TarjetaUbicacion() {
           </Text>
         ) : (
           <>
-            <Text style={styles.distanciaTexto}>
-              {distancia === 0
-                ? "Ubicación desde el GPS"
-                : `Corregiste el punto ${distancia} m`}
-            </Text>
+            <Text style={styles.distanciaTexto}>{textoDistancia}</Text>
             <MapView
               style={styles.mapa}
               initialRegion={{
-                latitude: ubicacionPin!.latitud,
-                longitude: ubicacionPin!.longitud,
+                latitude: ubicacion!.latitud,
+                longitude: ubicacion!.longitud,
                 latitudeDelta: 0.005,
                 longitudeDelta: 0.005,
               }}
             >
               <Marker
                 coordinate={{
-                  latitude: ubicacionPin!.latitud,
-                  longitude: ubicacionPin!.longitud,
+                  latitude: ubicacion!.latitud,
+                  longitude: ubicacion!.longitud,
                 }}
                 draggable
                 onDragEnd={alSoltarElPin}

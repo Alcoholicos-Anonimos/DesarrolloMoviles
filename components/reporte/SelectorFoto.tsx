@@ -1,30 +1,40 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as ImagePicker from "expo-image-picker";
 import {
-    Alert,
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    useColorScheme,
-    View,
+  Alert,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
 } from "react-native";
 import {
-    espaciados,
-    obtenerColores,
-    radios,
-    tipografia,
+  espaciados,
+  obtenerColores,
+  radios,
+  tipografia,
 } from "../../styles/theme";
 
+const MAXIMO_FOTOS = 2;
+
 type Props = {
-  foto: string | null;
-  onFotoChange: (uri: string | null) => void;
+  fotos: string[];
+  onFotosChange: (fotos: string[]) => void;
 };
 
-export function SelectorFoto({ foto, onFotoChange }: Props) {
+export function SelectorFoto({ fotos, onFotosChange }: Props) {
   const colorScheme = useColorScheme();
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
+
+  const agregarFoto = (uri: string) => {
+    onFotosChange([...fotos, uri]);
+  };
+
+  const quitarFoto = (uri: string) => {
+    onFotosChange(fotos.filter((f) => f !== uri));
+  };
 
   const tomarFoto = async () => {
     const permiso = await ImagePicker.requestCameraPermissionsAsync();
@@ -37,7 +47,7 @@ export function SelectorFoto({ foto, onFotoChange }: Props) {
     }
     const resultado = await ImagePicker.launchCameraAsync({ quality: 0.6 });
     if (!resultado.canceled) {
-      onFotoChange(resultado.assets[0].uri);
+      agregarFoto(resultado.assets[0].uri);
     }
   };
 
@@ -54,22 +64,38 @@ export function SelectorFoto({ foto, onFotoChange }: Props) {
       quality: 0.6,
     });
     if (!resultado.canceled) {
-      onFotoChange(resultado.assets[0].uri);
+      agregarFoto(resultado.assets[0].uri);
     }
   };
+
+  const quedaLugar = fotos.length < MAXIMO_FOTOS;
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Foto (obligatoria)</Text>
 
-      {foto ? (
-        <Pressable onPress={() => onFotoChange(null)}>
-          <Image source={{ uri: foto }} style={styles.fotoPreview} />
-          <Text style={styles.textoCambiarFoto}>
-            Tocá la foto para sacar otra
-          </Text>
-        </Pressable>
-      ) : (
+      {fotos.length > 0 && (
+        <View style={styles.filaPreview}>
+          {fotos.map((uri) => (
+            <Pressable
+              key={uri}
+              onPress={() => quitarFoto(uri)}
+              style={styles.previewWrapper}
+            >
+              <Image source={{ uri }} style={styles.fotoPreview} />
+              <View style={styles.botonQuitar}>
+                <Ionicons
+                  name="close-circle"
+                  size={22}
+                  color={colores.peligro}
+                />
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      {quedaLugar && (
         <View style={styles.filaBotonesGrandes}>
           <Pressable style={styles.botonGrande} onPress={tomarFoto}>
             <Ionicons name="camera-outline" size={24} color={colores.texto} />
@@ -80,6 +106,14 @@ export function SelectorFoto({ foto, onFotoChange }: Props) {
             <Text style={styles.botonGrandeText}>Galeria</Text>
           </Pressable>
         </View>
+      )}
+
+      {fotos.length > 0 && (
+        <Text style={styles.textoAyuda}>
+          {quedaLugar
+            ? "Tocá una foto para sacarla"
+            : "Máximo 2 fotos. Tocá una para sacarla."}
+        </Text>
       )}
     </View>
   );
@@ -114,16 +148,31 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       ...tipografia.texto,
       color: colores.texto,
     },
+    filaPreview: {
+      flexDirection: "row",
+      gap: espaciados.pequeno,
+      marginBottom: espaciados.medio,
+    },
+    previewWrapper: {
+      position: "relative",
+      flex: 1,
+    },
     fotoPreview: {
       width: "100%",
-      height: 180,
+      height: 140,
       borderRadius: radios.medio,
       backgroundColor: colores.superficie,
     },
-    textoCambiarFoto: {
+    botonQuitar: {
+      position: "absolute",
+      top: -8,
+      right: -8,
+      backgroundColor: colores.fondo,
+      borderRadius: 999,
+    },
+    textoAyuda: {
       ...tipografia.textoSecundario,
       color: colores.textoSecundario,
-      textAlign: "center",
       marginTop: espaciados.pequeno,
     },
   });
