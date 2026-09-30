@@ -1,4 +1,5 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -152,6 +153,13 @@ export default function InicioSesionScreen() {
             )}
           </Pressable>
 
+          {/* REGISTRO */}
+          <View style={styles.filaRegistro}>
+            <Text style={styles.textoSecundario}>¿No tenés cuenta?</Text>
+            <Pressable onPress={() => router.push("/registro")} hitSlop={8}>
+              <Text style={styles.textoEnlace}>Registrate</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -249,6 +257,18 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       ...tipografia.textoSecundario,
       color: colores.enlace,
       fontWeight: pesosFuente.medio,
+    },
+
+    // Registro
+    filaRegistro: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: espaciados.xs,
+      marginTop: espaciados.muyGrande,
+    },
+    textoSecundario: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
     },
 
     // Error

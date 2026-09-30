@@ -45,6 +45,7 @@ function NavegacionRaiz() {
         {/* Sin sesión */}
         <Stack.Protected guard={!usuario}>
           <Stack.Screen name="iniciosesion" options={{ headerShown: false }} />
+          <Stack.Screen name="registro" options={{ headerShown: false }} />
         </Stack.Protected>
 
         {/* Vecino */}
