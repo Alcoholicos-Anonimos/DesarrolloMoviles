@@ -69,23 +69,20 @@ function NavegacionRaiz() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Protected guard={!usuario}>
-          <Stack.Screen name="iniciosesion" options={{ headerShown: false }} />
-          <Stack.Screen name="registro" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/iniciosesion" options={{ headerShown: false }} />
+          <Stack.Screen name="auth/registro" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={esVecino}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="nuevo-reporte" options={{ headerShown: false }} />
+          <Stack.Screen name="reclamos/nuevo-reporte" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={esOperador}>
-          <Stack.Screen name="bandeja" options={{ headerShown: false }} />
+          <Stack.Screen name="reclamos/bandeja" options={{ headerShown: false }} />
         </Stack.Protected>
 
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
+       
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

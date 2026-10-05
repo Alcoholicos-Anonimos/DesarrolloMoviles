@@ -1,4 +1,5 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -126,6 +127,12 @@ export default function BandejaScreen() {
     ]);
   };
 
+  const verDetalle = (item: Reporte) => {
+    router.push({
+      pathname: "/reclamos/[id]",
+      params: { id: item.id },
+    });
+  };
 
   const renderTarjeta = ({ item }: { item: Reporte }) => {
     const tipo = tipos.find((t) => t.id === item.tipoId);
@@ -139,7 +146,14 @@ export default function BandejaScreen() {
       : "Asignar cuadrilla";
 
     return (
-      <View style={styles.tarjeta}>
+      // Tocar la tarjeta abre el detalle. Los Pressable de adentro (badge y botones)
+      // siguen funcionando porque el más interno es el que recibe el toque.
+      <Pressable
+        style={({ pressed }) => [styles.tarjeta, pressed && styles.presionado]}
+        onPress={() => verDetalle(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver detalle de ${item.codigo}`}
+      >
         <View style={styles.filaTitulo}>
           <Text style={styles.tituloTarjeta} numberOfLines={1}>
             {tipo?.nombre ?? "Reporte"} - {item.direccion}
@@ -202,7 +216,7 @@ export default function BandejaScreen() {
             </Pressable>
           )}
         </View>
-      </View>
+      </Pressable>
     );
   };
 

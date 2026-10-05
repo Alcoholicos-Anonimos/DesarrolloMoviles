@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Image, ActivityIn
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, Stack, useLocalSearchParams } from "expo-router";
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { reportesService } from "../src/servicios/reportes";
-import { CambioDeEstado, EstadoReporte, Reporte, TipoDeReporte } from "../src/tipos";
+import { reportesService } from "../../src/servicios/reportes";
+import { CambioDeEstado, EstadoReporte, Reporte, TipoDeReporte } from "../../src/tipos";
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { Colors } from '@/constants/theme';
-import { obtenerColores, espaciados, radios, tipografia, pesosFuente, estilosComunes, obtenerColoresEstado } from "../styles/theme";
+import { obtenerColores, espaciados, radios, tipografia, pesosFuente, estilosComunes, obtenerColoresEstado } from "../../styles/theme";
+import * as Linking from "expo-linking";
 
 const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   recibido: "Recibido",
@@ -16,8 +16,6 @@ const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   resuelto: "Resuelto",
   rechazado: "Rechazado",
 };
-
-
 
 function formatearFecha(iso: string) {
   const d = new Date(iso);
@@ -31,6 +29,9 @@ function urlQR(texto: string, tamano = 200) {
   )}`;
 }
 
+export function crearLinkDetalle(idReporte: string) {
+  return Linking.createURL(`/reclamos/${idReporte}`);
+}
 export default function DetalleReporte(){
   const colorScheme = useColorScheme();
 
@@ -98,6 +99,8 @@ export default function DetalleReporte(){
     reporte.estado === "rechazado"
       ? [...cambios].reverse().find((c) => c.estado === "rechazado")?.comentario
       : null;
+
+  const linkDetalle = crearLinkDetalle(String(reporte.id));
 
   return (
     <SafeAreaView style={styles.container}>
@@ -199,7 +202,7 @@ export default function DetalleReporte(){
         >
           <View style={styles.tarjetaQR}>
             <Image
-              source={{ uri: urlQR(reporte.codigo) }}
+              source={{ uri: urlQR(linkDetalle) }}
               style={{ width: 200, height: 200 }}
             />
             <Text style={styles.textoQR}>{reporte.codigo}</Text>
@@ -271,11 +274,13 @@ const crearStyles = (colorScheme: "light" | "dark") => {
     badgeTexto: {
       // ...tipografia.textoPequeno,
       // fontWeight: pesosFuente.medio,
-       borderWidth: 1,
+      /* borderWidth: 1,
           borderColor: colores.borde,
           borderRadius: radios.redondo,
           paddingVertical: 10,
-          paddingHorizontal: espaciados.grande,
+          paddingHorizontal: espaciados.grande,*/
+          ...tipografia.textoSecundario,
+    fontWeight: pesosFuente.seminegrita,
     },
 
     filaAdhesiones: {
