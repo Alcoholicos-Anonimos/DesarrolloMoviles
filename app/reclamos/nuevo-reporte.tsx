@@ -1,6 +1,6 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as Network from "expo-network";
-import { router } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
@@ -14,20 +14,20 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SelectorContanos } from "../components/reporte/SelectorContanos";
-import { SelectorFoto } from "../components/reporte/SelectorFoto";
-import { SelectorTipoProblema } from "../components/reporte/SelectorTipoProblema";
-import { TarjetaUbicacion } from "../components/reporte/TarjetaUbicacion";
-import { guardarReportePendiente } from "../src/servicios/colaOffline";
-import { reportesService } from "../src/servicios/reportes";
-import { Coordenadas, NuevoReporteInput } from "../src/tipos";
+import { SelectorContanos } from "../../components/reporte/SelectorContanos";
+import { SelectorFoto } from "../../components/reporte/SelectorFoto";
+import { SelectorTipoProblema } from "../../components/reporte/SelectorTipoProblema";
+import { TarjetaUbicacion } from "../../components/reporte/TarjetaUbicacion";
+import { guardarReportePendiente } from "../../src/servicios/colaOffline";
+import { reportesService } from "../../src/servicios/reportes";
+import { Coordenadas, NuevoReporteInput } from "../../src/tipos";
 import {
   espaciados,
   obtenerColores,
   pesosFuente,
   radios,
   tipografia,
-} from "../styles/theme";
+} from "../../styles/theme";
 
 export default function NuevoReporte() {
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
@@ -119,6 +119,7 @@ export default function NuevoReporte() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+      <Stack.Screen options={{ headerShown: false }} />
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colores.texto} />
         </Pressable>

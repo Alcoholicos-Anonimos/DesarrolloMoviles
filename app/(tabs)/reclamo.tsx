@@ -22,7 +22,7 @@ import {
 } from "../../styles/theme";
 import { Reporte, TipoDeReporte, EstadoReporte } from "../../src/tipos";
 import { reportesService } from "../../src/servicios/reportes";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Link } from "expo-router";
 import { useAuth } from "@/src/contexto/AuthContext";
 // Función auxiliar para mapear el color y texto según el estado
@@ -88,7 +88,7 @@ export default function ReclamoScreen() {
   };
 
   // Carga asíncrona desde la capa de servicios
-  useEffect(() => {
+  useFocusEffect(() => {
     const cargarDatos = async () => {
       try {
         const [respReportes, respTipos] = await Promise.all([
@@ -105,7 +105,7 @@ export default function ReclamoScreen() {
     };
 
     cargarDatos();
-  }, []);
+  });
 
   // Función para obtener el tipo de reporte vinculado
   const obtenerTipo = (tipoId: string) => {
@@ -136,7 +136,7 @@ export default function ReclamoScreen() {
             <Ionicons name="log-out-outline" size={tamaniosIconos.grande} color={colores.texto} />
           </Pressable>
 
-          <Link href="/nuevo-reporte" asChild>
+          <Link href="/reclamos/nuevo-reporte" asChild>
             <Pressable
               style={({ pressed }) => [
                 styles.botonAgregar,
@@ -172,7 +172,7 @@ export default function ReclamoScreen() {
                 ]}
                 onPress={() =>
                   router.push({
-                    pathname: "/[id]",
+                    pathname: "/reclamos/[id]",
                     params: { id: item.id },
                   })
                 }
