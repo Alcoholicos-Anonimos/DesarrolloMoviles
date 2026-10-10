@@ -16,6 +16,7 @@ import {
 import {
   espaciados,
   obtenerColores,
+  pesosFuente,
   radios,
   tipografia,
 } from "../../styles/theme";
@@ -23,13 +24,19 @@ import {
 type Props = {
   ubicacion: Coordenadas | null;
   onUbicacionChange: (coordenada: Coordenadas | null) => void;
+  onDireccionChange: (direccion: string | null) => void;
 };
 
-export function TarjetaUbicacion({ ubicacion, onUbicacionChange }: Props) {
+export function TarjetaUbicacion({
+  ubicacion,
+  onUbicacionChange,
+  onDireccionChange,
+}: Props) {
   const [ubicacionOriginal, setUbicacionOriginal] =
     useState<Coordenadas | null>(null);
   const [precisionGps, setPrecisionGps] = useState<number | null>(null);
   const [pinFueMovido, setPinFueMovido] = useState(false);
+  const [direccion, setDireccion] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [permisoDenegado, setPermisoDenegado] = useState(false);
 
@@ -58,7 +65,39 @@ export function TarjetaUbicacion({ ubicacion, onUbicacionChange }: Props) {
     };
 
     obtenerUbicacion();
-  }, []);
+  }, [onUbicacionChange]);
+
+  // Cada vez que cambia el punto (GPS inicial o pin arrastrado), buscamos la dirección.
+  useEffect(() => {
+    if (!ubicacion) return;
+    let cancelado = false;
+
+    const resolverDireccion = async () => {
+      let texto: string | null = null;
+      try {
+        const resultados = await Location.reverseGeocodeAsync({
+          latitude: ubicacion.latitud,
+          longitude: ubicacion.longitud,
+        });
+        const lugar = resultados[0];
+        const calle = [lugar?.street, lugar?.streetNumber]
+          .filter(Boolean)
+          .join(" ");
+        texto = calle || lugar?.name || null;
+      } catch {
+        // Sin conexión o sin servicio: queda en null y el reporte usa las coordenadas.
+      }
+      if (!cancelado) {
+        setDireccion(texto);
+        onDireccionChange(texto);
+      }
+    };
+
+    resolverDireccion();
+    return () => {
+      cancelado = true;
+    };
+  }, [ubicacion, onDireccionChange]);
 
   const alSoltarElPin = (evento: MarkerDragStartEndEvent) => {
     onUbicacionChange({
@@ -94,6 +133,9 @@ export function TarjetaUbicacion({ ubicacion, onUbicacionChange }: Props) {
           </Text>
         ) : (
           <>
+            {direccion && (
+              <Text style={styles.direccionTexto}>{direccion}</Text>
+            )}
             <Text style={styles.distanciaTexto}>{textoDistancia}</Text>
             <MapView
               style={styles.mapa}
@@ -145,6 +187,11 @@ const crearStyles = (colorScheme: "light" | "dark") => {
     textoAviso: {
       ...tipografia.textoSecundario,
       color: colores.textoSecundario,
+    },
+    direccionTexto: {
+      ...tipografia.texto,
+      fontWeight: pesosFuente.negrita,
+      color: colores.texto,
     },
     distanciaTexto: {
       ...tipografia.textoSecundario,

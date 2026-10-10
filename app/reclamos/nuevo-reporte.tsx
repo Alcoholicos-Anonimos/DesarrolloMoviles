@@ -1,11 +1,10 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as Network from "expo-network";
-import { router, Stack } from "expo-router";
-import { useState } from "react";
+import { router } from "expo-router";
+import { useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import { SelectorContanos } from "../../components/reporte/SelectorContanos";
 import { SelectorFoto } from "../../components/reporte/SelectorFoto";
 import { SelectorTipoProblema } from "../../components/reporte/SelectorTipoProblema";
 import { TarjetaUbicacion } from "../../components/reporte/TarjetaUbicacion";
+import { guardarArchivosDelReporte } from "../../src/servicios/archivos";
 import { guardarReportePendiente } from "../../src/servicios/colaOffline";
 import { reportesService } from "../../src/servicios/reportes";
 import { Coordenadas, NuevoReporteInput } from "../../src/tipos";
@@ -35,11 +35,20 @@ export default function NuevoReporte() {
   const [descripcion, setDescripcion] = useState("");
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [ubicacion, setUbicacion] = useState<Coordenadas | null>(null);
+  const [direccion, setDireccion] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
 
   const colorScheme = useColorScheme();
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
+
+  // Al tocar el campo de texto, esperamos a que el teclado termine de abrirse
+  // y bajamos el scroll para que el campo quede a la vista.
+  const alEnfocarTexto = () => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
+  };
 
   const validarYArmarReporte = (): NuevoReporteInput | null => {
     if (fotos.length === 0) {
@@ -73,18 +82,24 @@ export default function NuevoReporte() {
         momento: "problema",
       })),
       coordenadas: ubicacion,
-      direccion: `${ubicacion.latitud.toFixed(5)}, ${ubicacion.longitud.toFixed(5)}`,
+      direccion:
+        direccion ??
+        `${ubicacion.latitud.toFixed(5)}, ${ubicacion.longitud.toFixed(5)}`,
     };
 
     return input;
   };
 
   const alEnviar = async () => {
-    const input = validarYArmarReporte();
-    if (!input) return;
+    const inputBase = validarYArmarReporte();
+    if (!inputBase) return;
 
     setEnviando(true);
+    let input = inputBase;
     try {
+      // Antes de hacer nada más, pasamos fotos y audio de la caché a la carpeta permanente.
+      input = guardarArchivosDelReporte(inputBase);
+
       const estadoRed = await Network.getNetworkStateAsync();
 
       if (!estadoRed.isConnected) {
@@ -116,22 +131,19 @@ export default function NuevoReporte() {
       setEnviando(false);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-      <Stack.Screen options={{ headerShown: false }} />
         <Pressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colores.texto} />
         </Pressable>
         <Text style={styles.headerTitle}>Nuevo reporte</Text>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
@@ -145,6 +157,7 @@ export default function NuevoReporte() {
           <TarjetaUbicacion
             ubicacion={ubicacion}
             onUbicacionChange={setUbicacion}
+            onDireccionChange={setDireccion}
           />
 
           <SelectorContanos
@@ -152,6 +165,7 @@ export default function NuevoReporte() {
             onDescripcionChange={setDescripcion}
             audioUri={audioUri}
             onAudioChange={setAudioUri}
+            onTextoFocus={alEnfocarTexto}
           />
 
           <Pressable
