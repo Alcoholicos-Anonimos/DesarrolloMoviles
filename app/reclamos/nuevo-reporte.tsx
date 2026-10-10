@@ -10,13 +10,14 @@ import {
   StyleSheet,
   Text,
   useColorScheme,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SelectorContanos } from "../../components/reporte/SelectorContanos";
 import { SelectorFoto } from "../../components/reporte/SelectorFoto";
 import { SelectorTipoProblema } from "../../components/reporte/SelectorTipoProblema";
 import { TarjetaUbicacion } from "../../components/reporte/TarjetaUbicacion";
+import { guardarArchivosDelReporte } from "../../src/servicios/archivos";
 import { guardarReportePendiente } from "../../src/servicios/colaOffline";
 import { reportesService } from "../../src/servicios/reportes";
 import { Coordenadas, NuevoReporteInput } from "../../src/tipos";
@@ -90,11 +91,15 @@ export default function NuevoReporte() {
   };
 
   const alEnviar = async () => {
-    const input = validarYArmarReporte();
-    if (!input) return;
+    const inputBase = validarYArmarReporte();
+    if (!inputBase) return;
 
     setEnviando(true);
+    let input = inputBase;
     try {
+      // Antes de hacer nada más, pasamos fotos y audio de la caché a la carpeta permanente.
+      input = guardarArchivosDelReporte(inputBase);
+
       const estadoRed = await Network.getNetworkStateAsync();
 
       if (!estadoRed.isConnected) {
