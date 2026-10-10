@@ -33,6 +33,7 @@ type Props = {
   onDescripcionChange: (texto: string) => void;
   audioUri: string | null;
   onAudioChange: (uri: string | null) => void;
+  onTextoFocus?: () => void;
 };
 
 export function SelectorContanos({
@@ -40,6 +41,7 @@ export function SelectorContanos({
   onDescripcionChange,
   audioUri,
   onAudioChange,
+  onTextoFocus,
 }: Props) {
   const [modo, setModo] = useState<Modo>(null);
 
@@ -130,6 +132,7 @@ export function SelectorContanos({
             placeholderTextColor={colores.textoSecundario}
             value={descripcion}
             onChangeText={onDescripcionChange}
+            onFocus={onTextoFocus}
           />
           <Pressable style={styles.botonListo} onPress={Keyboard.dismiss}>
             <Text style={styles.textoListo}>Listo</Text>
