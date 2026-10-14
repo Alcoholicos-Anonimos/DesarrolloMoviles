@@ -15,6 +15,30 @@ export const reportesService = {
     };
   },
 
+  // Reportes públicos para el mapa de la ciudad (cualquier vecino los ve)
+  obtenerReportesPublicos: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
+    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
+    return {
+      datos: MOCK_REPORTES,
+      meta: {
+        total: MOCK_REPORTES.length,
+        pagina: 1,
+        porPagina: 20,
+      },
+    };
+  },
+
+  // Un vecino se suma a un reporte existente en vez de crear otro duplicado
+  sumarseAReporte: async (reporteId: string): Promise<ApiRespuestaExitosa<Reporte>> => {
+    await new Promise((res) => setTimeout(res, 300));
+    const reporte = MOCK_REPORTES.find((r) => r.id === reporteId);
+    if (!reporte) {
+      throw new Error("No encontramos el reporte.");
+    }
+    reporte.adhesiones += 1;
+    return { datos: reporte };
+  },
+
   // Obtiene los tipos de reporte para saber nombre, ícono y color
   obtenerTipos: async (): Promise<TipoDeReporte[]> => {
     return MOCK_TIPOS;
