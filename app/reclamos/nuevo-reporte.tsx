@@ -1,6 +1,6 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as Network from "expo-network";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -30,11 +30,20 @@ import {
 } from "../../styles/theme";
 
 export default function NuevoReporte() {
+  // Si llegamos desde el mapa tocando un punto, las coordenadas vienen por params
+  const { lat, lng } = useLocalSearchParams<{ lat?: string; lng?: string }>();
+  const la = Number(lat);
+  const lo = Number(lng);
+  const coordenadaInicial: Coordenadas | null =
+    lat !== undefined && lng !== undefined && Number.isFinite(la) && Number.isFinite(lo)
+      ? { latitud: la, longitud: lo }
+      : null;
+
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
   const [fotos, setFotos] = useState<string[]>([]);
   const [descripcion, setDescripcion] = useState("");
   const [audioUri, setAudioUri] = useState<string | null>(null);
-  const [ubicacion, setUbicacion] = useState<Coordenadas | null>(null);
+  const [ubicacion, setUbicacion] = useState<Coordenadas | null>(coordenadaInicial);
   const [direccion, setDireccion] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -156,6 +165,7 @@ export default function NuevoReporte() {
 
           <TarjetaUbicacion
             ubicacion={ubicacion}
+            ubicacionInicial={coordenadaInicial}
             onUbicacionChange={setUbicacion}
             onDireccionChange={setDireccion}
           />

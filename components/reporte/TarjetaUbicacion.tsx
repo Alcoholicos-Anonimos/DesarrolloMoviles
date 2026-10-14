@@ -23,12 +23,15 @@ import {
 
 type Props = {
   ubicacion: Coordenadas | null;
+  // Si viene del mapa (punto tocado), se usa en vez del GPS
+  ubicacionInicial?: Coordenadas | null;
   onUbicacionChange: (coordenada: Coordenadas | null) => void;
   onDireccionChange: (direccion: string | null) => void;
 };
 
 export function TarjetaUbicacion({
   ubicacion,
+  ubicacionInicial,
   onUbicacionChange,
   onDireccionChange,
 }: Props) {
@@ -45,6 +48,15 @@ export function TarjetaUbicacion({
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
 
   useEffect(() => {
+    // Si el punto viene del mapa, no pedimos el GPS: usamos ese punto tal cual.
+    if (ubicacionInicial) {
+      setUbicacionOriginal(ubicacionInicial);
+      onUbicacionChange(ubicacionInicial);
+      setPrecisionGps(null);
+      setCargando(false);
+      return;
+    }
+
     const obtenerUbicacion = async () => {
       const permiso = await Location.requestForegroundPermissionsAsync();
       if (!permiso.granted) {
@@ -65,7 +77,7 @@ export function TarjetaUbicacion({
     };
 
     obtenerUbicacion();
-  }, [onUbicacionChange]);
+  }, [ubicacionInicial, onUbicacionChange]);
 
   // Cada vez que cambia el punto (GPS inicial o pin arrastrado), buscamos la dirección.
   useEffect(() => {
@@ -114,9 +126,11 @@ export function TarjetaUbicacion({
 
   const textoDistancia = pinFueMovido
     ? `Corregiste el punto ${formatearDistancia(distanciaCorregida)}`
-    : precisionGps
-      ? `A ${formatearDistancia(precisionGps)} de tu ubicación`
-      : "Ubicación desde el GPS";
+    : ubicacionInicial
+      ? "Elegiste este punto en el mapa"
+      : precisionGps
+        ? `A ${formatearDistancia(precisionGps)} de tu ubicación`
+        : "Ubicación desde el GPS";
 
   return (
     <View style={styles.section}>
