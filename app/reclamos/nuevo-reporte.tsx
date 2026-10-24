@@ -1,7 +1,7 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as Network from "expo-network";
 import { router, useLocalSearchParams } from "expo-router";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -38,7 +38,7 @@ export default function NuevoReporte() {
     lat !== undefined && lng !== undefined && Number.isFinite(la) && Number.isFinite(lo)
       ? { latitud: la, longitud: lo }
       : null;
-
+  
   const [tipoSeleccionado, setTipoSeleccionado] = useState("tip-bache");
   const [fotos, setFotos] = useState<string[]>([]);
   const [descripcion, setDescripcion] = useState("");
@@ -53,6 +53,13 @@ export default function NuevoReporte() {
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
 
+  //Vane metio dedo y lo corrige (:'D)  --> Esto evita que las referencias de las funciones cambien en cada render.
+  const cambiarUbicacion = useCallback((coordenada: Coordenadas | null) => {
+    setUbicacion(coordenada);
+  }, []);
+ const cambiarDireccion = useCallback((valor: string | null) => {
+    setDireccion(valor);
+  }, []);
   // Al tocar el campo de texto, esperamos a que el teclado termine de abrirse
   // y bajamos el scroll para que el campo quede a la vista.
   const alEnfocarTexto = () => {
@@ -166,8 +173,8 @@ export default function NuevoReporte() {
           <TarjetaUbicacion
             ubicacion={ubicacion}
             ubicacionInicial={coordenadaInicial}
-            onUbicacionChange={setUbicacion}
-            onDireccionChange={setDireccion}
+            onUbicacionChange={cambiarUbicacion}
+            onDireccionChange={cambiarDireccion}
           />
 
           <SelectorContanos

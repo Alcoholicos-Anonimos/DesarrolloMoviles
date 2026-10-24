@@ -3,12 +3,12 @@ import { Image, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 
 const iconos: Record<string, any> = {
-  'tip-bache': require('../assets/images/tipos/warning-outline.png'),
-  'tip-luz': require('../assets/images/tipos/flash-off-outline.png'),
-  'tip-rama': require('../assets/images/tipos/leaf-outline.png'),
-  'tip-basura': require('../assets/images/tipos/trash-outline.png'),
-  'tip-agua': require('../assets/images/tipos/water-outline.png'),
-  'tip-otro': require('../assets/images/tipos/ellipsis-horizontal-outline.png'),
+  'tip-bache': require('../../assets/images/tipos/warning-outline.png'),
+  'tip-luz': require('../../assets/images/tipos/flash-off-outline.png'),
+  'tip-rama': require('../../assets/images/tipos/leaf-outline.png'),
+  'tip-basura': require('../../assets/images/tipos/trash-outline.png'),
+  'tip-agua': require('../../assets/images/tipos/water-outline.png'),
+  'tip-otro': require('../../assets/images/tipos/ellipsis-horizontal-outline.png'),
 };
 
 export const MarcadorReporte = memo(({ reporte, color, onPress }: any) => {
