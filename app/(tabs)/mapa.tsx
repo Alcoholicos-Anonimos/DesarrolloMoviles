@@ -254,7 +254,7 @@ export default function MapaScreen() {
     useCallback(() => {
       let activo = true;
       const cargarDatos = async () => {
-        console.log("ingreso al primer hook");
+       // console.log("ingreso al primer hook");
         setCargando(true);
         setError(null);
         try {

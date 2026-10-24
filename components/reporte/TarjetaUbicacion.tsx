@@ -47,69 +47,86 @@ export function TarjetaUbicacion({
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
 
-  useEffect(() => {
-    // Si el punto viene del mapa, no pedimos el GPS: usamos ese punto tal cual.
-    if (ubicacionInicial) {
-      setUbicacionOriginal(ubicacionInicial);
+useEffect(() => {
+      // Si el punto viene del mapa, no pedimos el GPS: usamos ese punto tal cual.
+  if (ubicacionInicial) {
+    setUbicacionOriginal(ubicacionInicial);
+    //Para que no se genere bucle y nos de erro:
+    // Antes de notificar la ubicación al padre, comprobamos si las coordenadas ya coinciden.
+    if (
+      ubicacion?.latitud !== ubicacionInicial.latitud ||
+      ubicacion?.longitud !== ubicacionInicial.longitud
+    ) {
       onUbicacionChange(ubicacionInicial);
-      setPrecisionGps(null);
+    }
+    setPrecisionGps(null);
+    setCargando(false);
+    return;
+  }
+
+  const obtenerUbicacion = async () => {
+    const permiso = await Location.requestForegroundPermissionsAsync();
+    if (!permiso.granted) {
+      setPermisoDenegado(true);
       setCargando(false);
       return;
     }
 
-    const obtenerUbicacion = async () => {
-      const permiso = await Location.requestForegroundPermissionsAsync();
-      if (!permiso.granted) {
-        setPermisoDenegado(true);
-        setCargando(false);
-        return;
-      }
-
-      const posicion = await Location.getCurrentPositionAsync({});
-      const coordenada = {
-        latitud: posicion.coords.latitude,
-        longitud: posicion.coords.longitude,
-      };
-      setUbicacionOriginal(coordenada);
-      onUbicacionChange(coordenada);
-      setPrecisionGps(posicion.coords.accuracy ?? null);
-      setCargando(false);
+    const posicion = await Location.getCurrentPositionAsync({});
+    const coordenada = {
+      latitud: posicion.coords.latitude,
+      longitud: posicion.coords.longitude,
     };
+    setUbicacionOriginal(coordenada);
+    onUbicacionChange(coordenada);
+    setPrecisionGps(posicion.coords.accuracy ?? null);
+    setCargando(false);
+  };
 
-    obtenerUbicacion();
-  }, [ubicacionInicial, onUbicacionChange]);
-
+  obtenerUbicacion();
+}, [
+  ubicacionInicial?.latitud,
+  ubicacionInicial?.longitud,
+  ubicacion?.latitud,
+  ubicacion?.longitud,
+  onUbicacionChange,
+]);
   // Cada vez que cambia el punto (GPS inicial o pin arrastrado), buscamos la dirección.
-  useEffect(() => {
-    if (!ubicacion) return;
-    let cancelado = false;
+useEffect(() => {
+  if (!ubicacion) return;
+  let cancelado = false;
 
-    const resolverDireccion = async () => {
-      let texto: string | null = null;
-      try {
-        const resultados = await Location.reverseGeocodeAsync({
-          latitude: ubicacion.latitud,
-          longitude: ubicacion.longitud,
-        });
-        const lugar = resultados[0];
-        const calle = [lugar?.street, lugar?.streetNumber]
-          .filter(Boolean)
-          .join(" ");
-        texto = calle || lugar?.name || null;
-      } catch {
+  const resolverDireccion = async () => {
+    let texto: string | null = null;
+    try {
+      const resultados = await Location.reverseGeocodeAsync({
+        latitude: ubicacion.latitud,
+        longitude: ubicacion.longitud,
+      });
+      const lugar = resultados[0];
+      const calle = [lugar?.street, lugar?.streetNumber]
+        .filter(Boolean)
+        .join(" ");
+      texto = calle || lugar?.name || null;
+    } catch {
         // Sin conexión o sin servicio: queda en null y el reporte usa las coordenadas.
-      }
-      if (!cancelado) {
-        setDireccion(texto);
-        onDireccionChange(texto);
-      }
-    };
+    }
+    if (!cancelado) {
+      setDireccion(actual => actual === texto ? actual : texto);
+      onDireccionChange(texto);
+    }
+  };
 
-    resolverDireccion();
-    return () => {
-      cancelado = true;
-    };
-  }, [ubicacion, onDireccionChange]);
+  resolverDireccion();
+  return () => {
+    cancelado = true;
+  };
+}, [
+  //Dependencias: React vuelve a ejecutar ese useEffect cuando cambia alguna de esas dependencias.
+  ubicacion?.latitud,
+  ubicacion?.longitud,
+  onDireccionChange,
+]);
 
   const alSoltarElPin = (evento: MarkerDragStartEndEvent) => {
     onUbicacionChange({
