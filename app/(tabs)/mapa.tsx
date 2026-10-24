@@ -1,4 +1,4 @@
-import { MarcadorReporte } from "@/components/MarcadorReporte";
+import { MarcadorReporte } from "@/components/reporte/MarcadorReporte";
 import { BotonFiltros, CampoFiltro, ModalFiltros } from "@/components/utils/filtros";
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { espaciados, estiloMapaOscuro, estilosComunes, obtenerColores, obtenerColoresEstado, pesosFuente, radios, tipografia } from "@/styles/theme";
@@ -145,9 +145,26 @@ export default function MapaScreen() {
       if (!(await Location.hasServicesEnabledAsync())) return; // Permiso otorgado, verificamos si el GPS puede estar apagado
 
       const posicion = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      const region: Region = { ...ubicacion, latitude: posicion.coords.latitude, longitude: posicion.coords.longitude };
-      setUbicacion(region); //Guardamos la ubicacion real del usuario
-      mapRef.current?.animateToRegion(region, 500);
+      
+      // const region: Region = { ...ubicacion, latitude: posicion.coords.latitude, longitude: posicion.coords.longitude };
+      // setUbicacion(region); //Guardamos la ubicacion real del usuario
+      // mapRef.current?.animateToRegion(region, 500);
+
+      setUbicacion(actual => {
+  if (
+    actual.latitude === posicion.coords.latitude &&
+    actual.longitude === posicion.coords.longitude
+  ) {
+    return actual;
+  }
+
+  return {
+    ...actual,
+    latitude: posicion.coords.latitude,
+    longitude: posicion.coords.longitude
+  };
+});
+
     } catch (error) {
       console.error('Error al obtener la ubicación:', error);
     }
