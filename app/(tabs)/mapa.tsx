@@ -1,11 +1,11 @@
+import { MarcadorReporte } from "@/components/MarcadorReporte";
 import { BotonFiltros, CampoFiltro, ModalFiltros } from "@/components/utils/filtros";
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { espaciados, estiloMapaOscuro, estilosComunes, obtenerColores, obtenerColoresEstado, pesosFuente, radios, tipografia } from "@/styles/theme";
-import { Ionicons } from "@react-native-vector-icons/ionicons";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
-import { router } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,77 +13,51 @@ import { reportesService } from '../../src/servicios/reportes';
 import { Coordenadas, EstadoReporte, Reporte, TipoDeReporte } from '../../src/tipos';
 import { distanciaEnMetros } from '../../src/utilidades/geo';
 
-const RADIO_CERCA_METROS = 50;
 
-interface FiltrosMapa {
-  tipoId: string | null;
-  estado: EstadoReporte | null;
-}
-
-const FILTROS_POR_DEFECTO: FiltrosMapa = { tipoId: null, estado: null };
-
-const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
-  recibido: "Recibido",
-  en_revision: "En revisión",
-  asignado: "Asignado",
-  resuelto: "Resuelto",
-  rechazado: "Rechazado",
-};
-
-const obtenerInfoEstado = (estado: EstadoReporte, coloresEstado: ReturnType<typeof obtenerColoresEstado>) => {
-  switch (estado) {
-    case 'asignado':
-      return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
-    case 'resuelto':
-      return { label: 'Resuelto', color: coloresEstado.resuelto.texto }; // Verde
-    case 'rechazado':
-      return { label: 'Rechazado', color: coloresEstado.rechazado.texto }; // Rojo
-    case 'en_revision':
-      return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
-    case 'recibido':
-      return { label: 'Recibido', color: coloresEstado.recibido.texto }; // Gris
-  }
-};
-
-const obtenerIcono = (tipoId: string) => {
-  switch (tipoId) {
-    case 'tip-bache': return 'warning-outline';
-    case 'tip-luz': return 'flash-off-outline';
-    case 'tip-rama': return 'leaf-outline';
-    case 'tip-basura': return 'trash-outline';
-    case 'tip-agua': return 'water-outline';
-    case 'tip-otro': return 'ellipsis-horizontal-outline';
-  }
-};
-
-// Tocar un punto del mapa equivale a querer reportar ahí: pasa las coordenadas
-// al formulario para que el reporte se cree en ese lugar.
-const irANuevoReporte = (punto: Coordenadas) => {
-  router.push({
-    pathname: '/reclamos/nuevo-reporte',
-    params: {
-      lat: String(punto.latitud),
-      lng: String(punto.longitud),
-    },
-  });
-};
 
 export default function MapaScreen() {
+  ///////////////////////////////////////////////
+  // Constantes
+  ///////////////////////////////////////////////
+  const RADIO_CERCA_METROS = 50;
+  const FILTROS_POR_DEFECTO: FiltrosMapa = { tipoId: null, estado: null };
+  const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
+    recibido: "Recibido",
+    en_revision: "En revisión",
+    asignado: "Asignado",
+    resuelto: "Resuelto",
+    rechazado: "Rechazado",
+  };
+
+
+  ///////////////////////////////////////////////
+  // Declaraciones
+  ///////////////////////////////////////////////
   const colorScheme = useColorScheme();
-  //Creamos el estilo segun el color del modo del dispositivo 
-  const tema = colorScheme === "dark" ? "dark" : "light";
+  const tema = colorScheme === "dark" ? "dark" : "light";//Creamos el estilo segun el color del modo del dispositivo 
   const colores = obtenerColores(tema);
   const coloresEstado = obtenerColoresEstado(tema);
   const styles = crearStyles(tema);
+  const [reportes, setReportes] = useState<Reporte[]>([]);   //Reportes generados por los usuarios
+  const [tipos, setTipos] = useState<TipoDeReporte[]>([]);   //Tipos de reporte: bache, luminaria, basura, rama o árbol, agua o cloaca, semáforo, vereda, otro.
 
-  //Reportes generados por los usuarios
-  const [reportes, setReportes] = useState<Reporte[]>([]);
-
-  //Tipos de reporte: bache, luminaria, basura, rama o árbol, agua o cloaca, semáforo, vereda, otro.
-  const [tipos, setTipos] = useState<TipoDeReporte[]>([]);
+  const irANuevoReporte = (punto: Coordenadas) => {
+    router.push({
+      pathname: '/reclamos/nuevo-reporte',
+      params: {
+        lat: String(punto.latitud),
+        lng: String(punto.longitud),
+      },
+    });
+  };
 
   //Filtros aplicados al mapa
+  interface FiltrosMapa {
+    tipoId: string | null;
+    estado: EstadoReporte | null;
+    }
   const [filtros, setFiltros] = useState<FiltrosMapa>(FILTROS_POR_DEFECTO);
+  const hayFiltrosActivos = filtros.tipoId !== null || filtros.estado !== null;
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   //Estado si está cargando los datos del mapa o dio error
@@ -91,32 +65,34 @@ export default function MapaScreen() {
   const [error, setError] = useState<string | null>(null);
   const [intentos, setIntentos] = useState(0);
 
-  //ubicacion del mapa por defecto Gualeguaychú
-  //latitudeDelta y longitudeDelta indican cuánto territorio se muestra alrededor de la coordenada central del mapa.
-  const [ubicacion, setUbicacion] = useState<Region>({
+  //MAPA
+  const [ubicacion, setUbicacion] = useState<Region>({  //ubicacion del mapa por defecto Gualeguaychú
     latitude: -33.0069,
     longitude: -58.5142,
     latitudeDelta: 0.009,
     longitudeDelta: 0.00999,
   });
+  const mapRef = useRef<MapView>(null);   //Referencia al mapa para moverlo cuando llega la posición del GPS
+  
+  const ocultarPOI = [//Para ocultar los puntos de interes de google 
+    { featureType: "poi", stylers: [{ visibility: "off" }] },
+    { featureType: "transit", stylers: [{ visibility: "off" }] },
+  ];
+  const reportesVisibles = reportes.filter((r) => // Solo se dibujan en el mapa los reportes que cumplen los filtros
+    (filtros.tipoId === null || r.tipoId === filtros.tipoId) &&
+    (filtros.estado === null || r.estado === filtros.estado),);
 
-  //Permiso de ubicación: si se denegó y si el sistema todavía permite volver a preguntar
-  const [permisoDenegado, setPermisoDenegado] = useState(false);
+  //ACCIONES
+  const [permisoDenegado, setPermisoDenegado] = useState(false);//Permiso de ubicación: si se denegó y si el sistema todavía permite volver a preguntar
   const [puedePreguntar, setPuedePreguntar] = useState(true);
-
-  //Referencia al mapa para moverlo cuando llega la posición del GPS
-  const mapRef = useRef<MapView>(null);
-
-  //Tarjeta contextual: un reporte tocado en el marcador, o un punto tocado con duplicados cerca
-  const [reporteSeleccionado, setReporteSeleccionado] = useState<Reporte | null>(null);
   const [puntoTocado, setPuntoTocado] = useState<Coordenadas | null>(null);
+  const [puntoTocadoConfirmar, setPuntoTocadoConfirmar] = useState<Coordenadas | null>(null);
+  const [reporteSeleccionado, setReporteSeleccionado] = useState<Reporte | null>(null);
   const [duplicadosCerca, setDuplicadosCerca] = useState<{ reporte: Reporte; distancia: number }[]>([]);
   const [sumando, setSumando] = useState(false);
 
-  // ¿Está viendo algo distinto a la vista por defecto?
-  const hayFiltrosActivos = filtros.tipoId !== null || filtros.estado !== null;
 
-  // Grupos de filtros que muestra el modal
+  //MODAL
   const campos: CampoFiltro<FiltrosMapa>[] = [
     {
       clave: "tipoId",
@@ -132,45 +108,28 @@ export default function MapaScreen() {
     },
   ];
 
-  // Solo se dibujan en el mapa los reportes que cumplen los filtros
-  // Más vecinos sumados = más arriba (mismo criterio que la bandeja del operador)
-  const reportesVisibles = reportes
-    .filter(
-      (r) =>
-        (filtros.tipoId === null || r.tipoId === filtros.tipoId) &&
-        (filtros.estado === null || r.estado === filtros.estado),
-    )
-    .sort((a, b) => b.adhesiones - a.adhesiones || b.creadoEn.localeCompare(a.creadoEn));
+  ///////////////////////////////////////////////
+  // Acciones
+  ///////////////////////////////////////////////
 
-  // Carga asíncrona desde la capa de servicios
-  useEffect(() => {
-    const cargarDatos = async () => {
-      setCargando(true);
-      setError(null);
-      try {
-        // El mapa de la ciudad muestra reportes públicos, no solo los propios
-        const [respReportes, respTipos] = await Promise.all([
-          reportesService.obtenerReportesPublicos(),
-          reportesService.obtenerTipos(),
-        ]);
-        setReportes(respReportes.datos);
-        setTipos(respTipos);
-      } catch (e) {
-        console.error('Error al cargar el mapa:', e);
-        setError('No pudimos cargar el mapa. Revisá la conexión e intentá de nuevo.');
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    cargarDatos();
-  }, [intentos]);
-
-  // Ubicación del usuario. `pedir` indica si se puede mostrar el diálogo de permiso.
-  const obtenerUbicacion = async (pedir: boolean) => {
+  const obtenerInfoEstado = (estado: EstadoReporte, coloresEstado: ReturnType<typeof obtenerColoresEstado>) => {
+    switch (estado) {
+      case 'asignado':
+        return { label: 'Asignado', color: coloresEstado.asignado.texto }; // Ámbar/Naranja
+      case 'resuelto':
+        return { label: 'Resuelto', color: coloresEstado.resuelto.texto }; // Verde
+      case 'rechazado':
+        return { label: 'Rechazado', color: coloresEstado.rechazado.texto }; // Rojo
+      case 'en_revision':
+        return { label: 'En revisión', color: coloresEstado.en_revision.texto }; // Azul
+      case 'recibido':
+        return { label: 'Recibido', color: coloresEstado.recibido.texto }; // Gris
+    }
+  };
+  // Ubicación del usuario. 
+  const obtenerUbicacion = async (pedir: boolean) => { // Variable: pedir. Indica si se puede mostrar el diálogo de permiso.
     try {
-      // Solo consulta, no muestra el diálogo
-      let permiso = await Location.getForegroundPermissionsAsync();
+      let permiso = await Location.getForegroundPermissionsAsync(); // Solo consultamos si hay permiso, no mostramos alert
 
       if (!permiso.granted && permiso.canAskAgain && pedir) {
         permiso = await Location.requestForegroundPermissionsAsync();
@@ -183,94 +142,77 @@ export default function MapaScreen() {
       }
       setPermisoDenegado(false);
 
-      // Permiso otorgado, pero el GPS del teléfono puede estar apagado
-      if (!(await Location.hasServicesEnabledAsync())) return;
+      if (!(await Location.hasServicesEnabledAsync())) return; // Permiso otorgado, verificamos si el GPS puede estar apagado
 
-      const posicion = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const region: Region = {
-        ...ubicacion,
-        latitude: posicion.coords.latitude,
-        longitude: posicion.coords.longitude,
-      };
-      setUbicacion(region);
+      const posicion = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const region: Region = { ...ubicacion, latitude: posicion.coords.latitude, longitude: posicion.coords.longitude };
+      setUbicacion(region); //Guardamos la ubicacion real del usuario
       mapRef.current?.animateToRegion(region, 500);
     } catch (error) {
       console.error('Error al obtener la ubicación:', error);
     }
   };
 
-  // Al abrir la pantalla: consulta y, si hace falta, pide el permiso
-  useEffect(() => {
-    obtenerUbicacion(true);
-  }, []);
-
-  // Al volver desde ajustes: solo re-chequea, sin volver a mostrar el diálogo
-  useEffect(() => {
-    const sub = AppState.addEventListener("change", (estado) => {
-      if (estado === "active") obtenerUbicacion(false);
-    });
-    return () => sub.remove();
-  }, []);
-
   const cerrarTarjetas = () => {
     setReporteSeleccionado(null);
     setPuntoTocado(null);
     setDuplicadosCerca([]);
+    setPuntoTocadoConfirmar(null);
   };
 
-  // Tocar el mapa = quiero reportar en ese punto: primero chequear duplicados a menos de 50 m
-  const alTocarMapa = (coordenada: { latitude: number; longitude: number }) => {
-    setReporteSeleccionado(null);
-    const punto: Coordenadas = {
-      latitud: coordenada.latitude,
-      longitud: coordenada.longitude,
-    };
-
-    const cerca = reportes
-      .map((r) => ({
-        reporte: r,
-        distancia: distanciaEnMetros(punto, r.coordenadas),
-      }))
-      .filter((x) => x.distancia < RADIO_CERCA_METROS)
-      .sort((a, b) => a.distancia - b.distancia);
-
-    if (cerca.length === 0) {
-      // No hay nada reportado ahí: ir directo al formulario en ese punto
-      setPuntoTocado(null);
-      setDuplicadosCerca([]);
-      irANuevoReporte(punto);
-      return;
-    }
-
-    // Vibración al detectar un reporte duplicado cerca (expo-haptics)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setPuntoTocado(punto);
-    setDuplicadosCerca(cerca);
+  const confirmarNuevoReporte = () => {
+    if (!puntoTocadoConfirmar) return;
+    const punto = puntoTocadoConfirmar;
+    setPuntoTocadoConfirmar(null);
+    irANuevoReporte(punto);
   };
 
-  // Tocar un marcador = ver ese reporte y poder sumarse
-  const alTocarReporte = (reporte: Reporte) => {
+  const cancelarNuevoReporte = () => setPuntoTocadoConfirmar(null);
+
+  //Acciones sobre el mapa
+  //Al tocar el marcador de un reporte creado
+  const alTocarReporte = (reporte: Reporte) => { 
     setPuntoTocado(null);
+    setPuntoTocadoConfirmar(null);
     setDuplicadosCerca([]);
     setReporteSeleccionado(reporte);
   };
 
-  // El vecino se suma al reporte en vez de crear otro
-  const alSumarse = async (reporteId: string) => {
-    if (sumando) return;
+  //Acciones sobre el mapa
+  //Al tocar un lugar libre
+  const alTocarMapa = (coordenada: { latitude: number; longitude: number }) => {
+      setReporteSeleccionado(null);
+      const punto: Coordenadas = { latitud: coordenada.latitude, longitud: coordenada.longitude };
 
+      const cerca = reportes.map((r) => ({ reporte: r, distancia: distanciaEnMetros(punto, r.coordenadas) }))
+        .filter((x) => x.distancia < RADIO_CERCA_METROS)
+        .sort((a, b) => a.distancia - b.distancia);
+
+      if (cerca.length === 0) { // No hay nada reportado ahí: preguntar  antes de ir al formulario 
+        setPuntoTocado(null);
+        setDuplicadosCerca([]);
+        //irANuevoReporte(punto);
+        setPuntoTocadoConfirmar(punto);
+        return;
+      }
+
+      // Agregamos vibracian al detectar un reporte duplicado cerca 
+      setPuntoTocadoConfirmar(null);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      setPuntoTocado(punto);
+      setDuplicadosCerca(cerca);
+    };
+
+    ///Acciones sobre el mapa
+    //Al tocar un lugar cerca de un reporte creado
+  const alSumarse = async (reporteId: string) => { // El vecino se suma al reporte en vez de crear otro
+    if (sumando) return;
     setSumando(true);
     try {
       const respuesta = await reportesService.sumarseAReporte(reporteId);
-      setReportes((actuales) =>
-        actuales.map((r) => (r.id === respuesta.datos.id ? respuesta.datos : r)),
-      );
-      setReporteSeleccionado((actual) =>
-        actual?.id === respuesta.datos.id ? respuesta.datos : actual,
-      );
-      // Vibración al sumarse al reporte (expo-haptics)
+      setReportes((actuales) => actuales.map((r) => (r.id === respuesta.datos.id ? respuesta.datos : r)));
+      setReporteSeleccionado((actual) => actual?.id === respuesta.datos.id ? respuesta.datos : actual);
+      // Vibración al sumarse al reporte 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       cerrarTarjetas();
     } catch (e) {
@@ -279,6 +221,57 @@ export default function MapaScreen() {
       setSumando(false);
     }
   };
+
+  
+  ///////////////////////////////////////////////
+  // HOOKS
+  ///////////////////////////////////////////////
+
+  //Hook para obtener la ubicacion del mapa, se ejecuta una sola vez
+  useEffect(() => {
+    obtenerUbicacion(true);
+  }, []);
+
+  //Hook que se recarga siempre para tener los datos actualizados del mapa
+  useFocusEffect(
+    useCallback(() => {
+      let activo = true;
+      const cargarDatos = async () => {
+        console.log("ingreso al primer hook");
+        setCargando(true);
+        setError(null);
+        try {
+          // El mapa de la ciudad muestra TODOS los reportes 
+          const [respReportes, respTipos] = await Promise.all([reportesService.obtenerReportesPublicos(), reportesService.obtenerTipos(),]);
+
+          if (activo) {
+            setReportes(respReportes.datos);
+            setTipos(respTipos);
+          }
+
+        } catch (e) {
+          if (activo)
+            setError('No pudimos cargar el mapa. Revisá la conexión e intentá de nuevo.');
+        } finally {
+          if (activo)
+            setCargando(false);
+        }
+
+      };
+      cargarDatos();
+      return () => { activo = false; };
+    }, [intentos])//Al incrementar intentos se vuelva a ejecutar este useEffect
+  );
+
+  //Hook para cuando se cambia de aplicaciones del celu
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (estado) => {
+      if (estado === "active")
+        obtenerUbicacion(false);
+    });
+    return () => sub.remove();
+  }, []);
+
 
   if (cargando) {
     return (
@@ -305,40 +298,50 @@ export default function MapaScreen() {
         style={styles.mapa}
         ref={mapRef}
         initialRegion={ubicacion}
+        googleRenderer="LEGACY"
         showsUserLocation={!permisoDenegado}
-        customMapStyle={colorScheme === "dark" ? estiloMapaOscuro : undefined}
-        onPress={(e) => alTocarMapa(e.nativeEvent.coordinate)}
-      >
+        customMapStyle={colorScheme === "dark" ? [...estiloMapaOscuro, ...ocultarPOI] : ocultarPOI}
+        onPress={(e) => alTocarMapa(e.nativeEvent.coordinate)} >
+        
+        {/* Los marcadores customizados de todos los reportes informados */}
         {reportesVisibles.map((r) => (
-          <Marker
+          <MarcadorReporte
             key={r.id}
-            coordinate={{ latitude: r.coordenadas.latitud, longitude: r.coordenadas.longitud }}
-            onPress={(e) => {
-              // El toque no debe burbujear al mapa (que crearía un reporte nuevo)
-              e.stopPropagation();
-              alTocarReporte(r);
-            }}
-          >
-            <View style={[styles.pin, { backgroundColor: obtenerInfoEstado(r.estado, coloresEstado).color }]}  >
-              <Ionicons
-                name={(obtenerIcono(r.tipoId)) as any}
-                size={16}
-                color={colores.blanco}
-              />
-            </View>
-          </Marker>
+            reporte={r}
+            color={obtenerInfoEstado(r.estado, coloresEstado).color}
+            onPress={alTocarReporte}
+          /> 
         ))}
-        {/* Marcador temporal del punto tocado mientras se decide si es duplicado */}
-        {puntoTocado && (
+
+        {/* Nuevo Marcador: punto tocado */}
+        {(puntoTocado || puntoTocadoConfirmar) && (
           <Marker
-            coordinate={{ latitude: puntoTocado.latitud, longitude: puntoTocado.longitud }}
+            coordinate={{
+              latitude: (puntoTocado ?? puntoTocadoConfirmar)!.latitud,
+              longitude: (puntoTocado ?? puntoTocadoConfirmar)!.longitud,
+            }}
             anchor={{ x: 0.5, y: 1 }}
             pinColor={colores.primario}
           />
         )}
       </MapView>
 
-      {/* Header flotante sobre el mapa */}
+      {/* Cartel para nuevo punto si quiere cargar ahi nuevo reporte */}
+      {puntoTocadoConfirmar && (
+        <View style={styles.tarjeta}>
+          <Text style={styles.tarjetaTitulo}>¿Generar un nuevo reporte aquí?</Text>
+          <View style={styles.tarjetaBotones}>
+            <Pressable style={[styles.botonSecundario]} onPress={cancelarNuevoReporte} >
+              <Text style={styles.textoBotonSecundario}>Cancelar</Text>
+            </Pressable>
+            <Pressable style={[styles.botonPrimario]} onPress={confirmarNuevoReporte}  >
+              <Text style={styles.textoBotonPrimario}>Sí, reportar</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Header flotante sobre el mapa, con titulo y filtros */}
       <SafeAreaView style={styles.capaSuperior} pointerEvents="box-none">
         <View style={styles.header}>
           <Text style={styles.titulo}>Mapa de la ciudad</Text>
@@ -347,6 +350,8 @@ export default function MapaScreen() {
             hayFiltrosActivos={hayFiltrosActivos}
           />
         </View>
+
+        {/* Cartel si no tiene permiso de GPS muestra mensaje */}
         {permisoDenegado && (
           <View style={styles.avisoPermiso}>
             <Text style={styles.textoAvisoPermiso}>
@@ -363,40 +368,48 @@ export default function MapaScreen() {
         )}
       </SafeAreaView>
 
-      {/* Tocaron un reporte existente: ver de qué se trata y sumarse */}
-      {reporteSeleccionado && (
-        <View style={styles.tarjeta}>
-          <Text style={styles.tarjetaTitulo}>
-            {reporteSeleccionado.descripcion === null
-              ? "Sin descripción"
-              : reporteSeleccionado.descripcion}
-          </Text>
-          <Text style={styles.tarjetaSubtitulo}>
-            {obtenerInfoEstado(reporteSeleccionado.estado, coloresEstado).label} · {reporteSeleccionado.direccion}
-          </Text>
-          <Text style={styles.tarjetaSubtitulo}>
-            {reporteSeleccionado.adhesiones === 1
-              ? "1 vecino se sumó"
-              : `${reporteSeleccionado.adhesiones} vecinos se sumaron`}
-          </Text>
-          <View style={styles.tarjetaBotones}>
-            <Pressable
-              style={styles.botonPrimario}
-              onPress={() => alSumarse(reporteSeleccionado.id)}
-              disabled={sumando}
-            >
-              <Text style={styles.textoBotonPrimario}>
-                {sumando ? "Sumando..." : "Sumarse"}
-              </Text>
-            </Pressable>
-            <Pressable style={styles.botonSecundario} onPress={cerrarTarjetas}>
-              <Text style={styles.textoBotonSecundario}>Cerrar</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+      {/* Cartel: Reporte existente. Mostramos informacion y boton para sumarse (sumarse si no fue resuelto o rechazado) */}
+      {reporteSeleccionado && (() => {
+        const estado = reporteSeleccionado.estado?.toLowerCase();
+        const puedeSumarse = estado !== "rechazado" && estado !== "resuelto";
 
-      {/* Tocaron un punto sin reporte: existen duplicados cerca, ¿es el mismo problema? */}
+        return (
+          <View style={styles.tarjeta}>
+            <Text style={styles.tarjetaTitulo}>
+              {reporteSeleccionado.descripcion === null
+                ? "Sin descripción"
+                : reporteSeleccionado.descripcion}
+            </Text>
+            <Text style={styles.tarjetaSubtitulo}>
+              {obtenerInfoEstado(reporteSeleccionado.estado, coloresEstado).label} · {reporteSeleccionado.direccion}
+            </Text>
+            <Text style={styles.tarjetaSubtitulo}>
+              {reporteSeleccionado.adhesiones === 1
+                ? "1 vecino se sumó"
+                : `${reporteSeleccionado.adhesiones} vecinos se sumaron`}
+            </Text>
+
+            <View style={styles.tarjetaBotones}>
+              {puedeSumarse && (
+                <Pressable
+                  style={styles.botonPrimario}
+                  onPress={() => alSumarse(reporteSeleccionado.id)}
+                  disabled={sumando}
+                >
+                  <Text style={styles.textoBotonPrimario}>
+                    {sumando ? "Sumando..." : "Sumarse"}
+                  </Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.botonSecundario} onPress={cerrarTarjetas}>
+                <Text style={styles.textoBotonSecundario}>Cerrar</Text>
+              </Pressable>
+            </View>
+          </View>
+        );
+      })()}
+
+      {/* Cartel: Tocaron un punto sin reporte. Verificamos si existen duplicados cerca */}
       {puntoTocado && duplicadosCerca.length > 0 && (
         <View style={styles.tarjeta}>
           <Text style={styles.tarjetaTitulo}>
@@ -426,6 +439,7 @@ export default function MapaScreen() {
         </View>
       )}
 
+      {/* Modal: Para los filtros */}
       <ModalFiltros<FiltrosMapa>
         visible={mostrarFiltros}
         filtros={filtros}
@@ -451,7 +465,7 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       backgroundColor: colores.fondo,
     },
 
-    // El mapa ocupa toda la pantalla; el resto se superpone
+    // El mapa ocupa toda la pantalla 
     mapa: {
       ...StyleSheet.absoluteFillObject,
     },
