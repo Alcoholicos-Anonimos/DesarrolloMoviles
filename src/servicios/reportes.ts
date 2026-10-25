@@ -1,5 +1,7 @@
-import { Reporte, TipoDeReporte, ApiRespuestaExitosa, NuevoReporteInput, CambioDeEstado } from '../tipos';
 import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
+import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
+
+import { api } from '@/api/clienteHttp';
 
 export const reportesService = {
   // Obtiene todos los reportes simulando una petición a la API
@@ -90,4 +92,17 @@ export const reportesService = {
       },
     };
   }
+,
+  listarZonas : async () : Promise <ApiRespuestaExitosa <Zona[] >> => {
+      const respuesta = await api.get("zonas");
+      console.log(respuesta.data.datos);
+      return  respuesta.data;
+     
+  },
+
+    listarCuadrillas : async () : Promise <ApiRespuestaExitosa <Cuadrilla[] >> => {
+      const resp = await api.get("cuadrillas");
+      return resp.data;
+     
+  },
 }
