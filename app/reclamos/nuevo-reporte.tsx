@@ -75,7 +75,7 @@ export default function NuevoReporte() {
     if (!ubicacion) {
       Alert.alert(
         "Falta la ubicación",
-        "No pudimos obtener tu ubicación. Activá el permiso e intentá de nuevo.",
+        "Todavía no tenemos la ubicación. Esperá un momento o, si no cargó, tocá el mapa para marcar dónde está el problema.",
       );
       return null;
     }
