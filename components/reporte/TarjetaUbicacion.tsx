@@ -54,6 +54,46 @@ function conTiempoLimite<T>(promesa: Promise<T>, ms: number): Promise<T> {
   });
 }
 
+// Arma "Calle 1234" con lo que devuelve el geocodificador de Android.
+function armarDireccion(
+  lugar: Location.LocationGeocodedAddress | undefined,
+): string | null {
+  if (!lugar) return null;
+
+  const calle = lugar.street?.trim();
+  const nombre = lugar.name?.trim();
+  // A veces la altura no viene en streetNumber pero sí en name (ej.: "1240").
+  const nombreEsAltura =
+    nombre && /^\d+[A-Za-z]?$/.test(nombre) ? nombre : undefined;
+  const altura = lugar.streetNumber?.trim() || nombreEsAltura;
+
+  if (calle && altura) return `${calle} ${altura}`;
+  if (calle) return calle; // sin altura: es lo mejor que se puede mostrar
+
+  // Sin calle, el nombre sirve solo si no es un código tipo "5MWM+3H" ni un número suelto.
+  if (nombre && !nombre.includes("+") && !nombreEsAltura) return nombre;
+  return null;
+}
+
+const esperar = (ms: number) =>
+  new Promise<void>((resolver) => setTimeout(resolver, ms));
+
+async function buscarDireccion(punto: Coordenadas): Promise<string | null> {
+  // El geocodificador a veces falla la primera vez: reintentamos una vez.
+  for (let intento = 0; intento < 2; intento++) {
+    try {
+      const resultados = await Location.reverseGeocodeAsync({
+        latitude: punto.latitud,
+        longitude: punto.longitud,
+      });
+      return armarDireccion(resultados[0]);
+    } catch {
+      if (intento === 0) await esperar(1500);
+    }
+  }
+  return null;
+}
+
 type Props = {
   ubicacion: Coordenadas | null;
   // Si viene del mapa (punto tocado), se usa en vez del GPS
@@ -73,6 +113,7 @@ export function TarjetaUbicacion({
   const [precisionGps, setPrecisionGps] = useState<number | null>(null);
   const [pinFueMovido, setPinFueMovido] = useState(false);
   const [direccion, setDireccion] = useState<string | null>(null);
+  const [buscandoDireccion, setBuscandoDireccion] = useState(true);
   const [cargando, setCargando] = useState(true);
   // null = el GPS anda. "permiso" = lo negaron. "gps" = permiso ok pero no se pudo leer.
   const [sinGps, setSinGps] = useState<"permiso" | "gps" | null>(null);
@@ -144,38 +185,34 @@ export function TarjetaUbicacion({
     obtenerGps(true);
   }, [latInicial, lngInicial, onUbicacionChange, obtenerGps]);
 
+  // Usamos números sueltos (no el objeto) para que el efecto no se repita en cada render.
+  const latActual = ubicacion?.latitud;
+  const lngActual = ubicacion?.longitud;
+
   // Cada vez que cambia el punto (GPS, mapa o pin arrastrado), buscamos la dirección.
   useEffect(() => {
-    if (!ubicacion) return;
+    if (latActual === undefined || lngActual === undefined) return;
     let cancelado = false;
 
-    const resolverDireccion = async () => {
-      let texto: string | null = null;
-      try {
-        const resultados = await Location.reverseGeocodeAsync({
-          latitude: ubicacion.latitud,
-          longitude: ubicacion.longitud,
-        });
-        const lugar = resultados[0];
-        const calle = [lugar?.street, lugar?.streetNumber]
-          .filter(Boolean)
-          .join(" ");
-        texto = calle || lugar?.name || null;
-      } catch {
-        // Sin conexión o sin servicio: queda en null y el reporte usa las coordenadas.
-      }
-      if (!cancelado) {
+    // Mientras se busca, no dejamos la calle del punto anterior ni la mandamos al reporte.
+    setBuscandoDireccion(true);
+    setDireccion(null);
+    onDireccionChange(null);
+
+    buscarDireccion({ latitud: latActual, longitud: lngActual }).then(
+      (texto) => {
+        if (cancelado) return;
         setDireccion(texto);
         onDireccionChange(texto);
-      }
-    };
+        setBuscandoDireccion(false);
+      },
+    );
 
-    resolverDireccion();
     return () => {
       cancelado = true;
     };
-  }, [ubicacion?.latitud, ubicacion?.longitud, onDireccionChange, ubicacion]);
-
+  }, [latActual, lngActual, onDireccionChange]);
+  
   const alSoltarElPin = (evento: MarkerDragStartEndEvent) => {
     onUbicacionChange({
       latitud: evento.nativeEvent.coordinate.latitude,
@@ -226,6 +263,10 @@ export function TarjetaUbicacion({
       ? "Sin permiso de ubicación. Te mostramos Gualeguaychú: tocá el mapa para marcar dónde está el problema."
       : "No pudimos leer el GPS. Te mostramos Gualeguaychú: tocá el mapa para marcar dónde está el problema.";
 
+  const textoDireccion = buscandoDireccion
+    ? "Buscando la dirección…"
+    : (direccion ?? "Dirección no disponible");
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>¿Dónde?</Text>
@@ -240,9 +281,14 @@ export function TarjetaUbicacion({
               <Text style={styles.textoAviso}>{textoAviso}</Text>
             ) : (
               <>
-                {direccion && (
-                  <Text style={styles.direccionTexto}>{direccion}</Text>
-                )}
+                <Text
+                  style={[
+                    styles.direccionTexto,
+                    !direccion && styles.direccionApagada,
+                  ]}
+                >
+                  {textoDireccion}
+                </Text>
                 <Text style={styles.distanciaTexto}>{textoDistancia}</Text>
               </>
             )}
@@ -312,6 +358,10 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       ...tipografia.texto,
       fontWeight: pesosFuente.negrita,
       color: colores.texto,
+    },
+    direccionApagada: {
+      fontWeight: pesosFuente.normal,
+      color: colores.textoSecundario,
     },
     distanciaTexto: {
       ...tipografia.textoSecundario,
