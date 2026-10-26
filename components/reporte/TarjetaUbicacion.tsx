@@ -14,10 +14,13 @@ import MapView, {
   Marker,
   MarkerDragStartEndEvent,
 } from "react-native-maps";
-import { Coordenadas } from "../../src/tipos";
+
+import { reportesService } from "../../src/servicios/reportes";
+import { Coordenadas, Zona } from "../../src/tipos";
 import {
   distanciaEnMetros,
   formatearDistancia,
+  zonaDe,
 } from "../../src/utilidades/geo";
 import {
   espaciados,
@@ -118,6 +121,7 @@ export function TarjetaUbicacion({
   // null = el GPS anda. "permiso" = lo negaron. "gps" = permiso ok pero no se pudo leer.
   const [sinGps, setSinGps] = useState<"permiso" | "gps" | null>(null);
   const [puedePreguntar, setPuedePreguntar] = useState(true);
+  const [zonas, setZonas] = useState<Zona[]>([]);
 
   const colorScheme = useColorScheme();
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
@@ -212,7 +216,25 @@ export function TarjetaUbicacion({
       cancelado = true;
     };
   }, [latActual, lngActual, onDireccionChange]);
-  
+
+  // Traemos los límites de las zonas una sola vez. Sin conexión, la zona simplemente no se muestra.
+  useEffect(() => {
+    let cancelado = false;
+    reportesService
+      .listarZonas()
+      .then((respuesta) => {
+        if (!cancelado) setZonas(respuesta.datos);
+      })
+      .catch(() => {
+        // Sin conexión o sin respuesta: queda sin zona
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const zonaActual = ubicacion ? zonaDe(ubicacion, zonas) : null;
+
   const alSoltarElPin = (evento: MarkerDragStartEndEvent) => {
     onUbicacionChange({
       latitud: evento.nativeEvent.coordinate.latitude,
@@ -289,7 +311,11 @@ export function TarjetaUbicacion({
                 >
                   {textoDireccion}
                 </Text>
-                <Text style={styles.distanciaTexto}>{textoDistancia}</Text>
+                <Text style={styles.distanciaTexto}>
+                  {zonaActual
+                    ? `${zonaActual.nombre} · ${textoDistancia}`
+                    : textoDistancia}
+                </Text>
               </>
             )}
 
