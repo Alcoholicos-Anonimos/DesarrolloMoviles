@@ -1,8 +1,11 @@
+
+import almacen from "expo-sqlite/kv-store";
 import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
 import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
 
 import { api } from '@/api/clienteHttp';
 
+const CLAVE_TIPOS = "catalogo_tipos_de_reporte";
 export const reportesService = {
   // Obtiene todos los reportes simulando una petición a la API
   obtenerMisReportes: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
@@ -42,10 +45,21 @@ export const reportesService = {
   },
 
   // Obtiene los tipos de reporte para saber nombre, ícono y color
+  // Tipos de problema: primero la API; sin conexión, el último listado guardado;
+  // y si nunca se bajó ninguno, la lista que viene en la app (los mismos 8 de la API).
   obtenerTipos: async (): Promise<TipoDeReporte[]> => {
-    return MOCK_TIPOS;
+    try {
+      const respuesta = await api.get("tipos-de-reporte", { timeout: 5000 });
+      const tipos = respuesta.data.datos as TipoDeReporte[];
+      almacen.setItem(CLAVE_TIPOS, JSON.stringify(tipos)).catch(() => {});
+      return tipos;
+    } catch {
+      const guardado = await almacen.getItem(CLAVE_TIPOS);
+      if (guardado) return JSON.parse(guardado) as TipoDeReporte[];
+      return MOCK_TIPOS;
+    }
   },
-
+  
   // Crea un nuevo reporte y lo agrega a la lista simulada
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
     await new Promise((res) => setTimeout(res, 300));
