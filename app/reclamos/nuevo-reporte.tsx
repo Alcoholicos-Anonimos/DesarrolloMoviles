@@ -89,6 +89,7 @@ export default function NuevoReporte() {
     }
 
     const input: NuevoReporteInput = {
+      id: `rep-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
       tipoId: tipoSeleccionado,
       descripcion: descripcion || null,
       audioUrl: audioUri,
@@ -101,6 +102,7 @@ export default function NuevoReporte() {
       direccion:
         direccion ??
         `${ubicacion.latitud.toFixed(5)}, ${ubicacion.longitud.toFixed(5)}`,
+      creadoEn: new Date().toISOString(),
     };
 
     return input;

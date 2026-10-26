@@ -36,14 +36,15 @@ export interface Reporte {
 }
 
 export interface NuevoReporteInput {
+  id: string;
   tipoId: string;
   descripcion: string | null;
   audioUrl: string | null;
   fotos: Foto[];
   coordenadas: Coordenadas;
   direccion: string;
+  creadoEn: string;
 }
-
 export interface TipoDeReporte {
   id: string;
   nombre: string;
