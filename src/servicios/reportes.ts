@@ -1,7 +1,30 @@
+
+import almacen from "expo-sqlite/kv-store";
 import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
 import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
 
 import { api } from '@/api/clienteHttp';
+
+const CLAVE_TIPOS = "catalogo_tipos_de_reporte";
+
+// Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
+async function subirArchivo(
+  uriLocal: string,
+  tipo: "imagen" | "audio",
+): Promise<string> {
+  const formulario = new FormData();
+  formulario.append("archivo", {
+    uri: uriLocal,
+    name: tipo === "imagen" ? "foto.jpg" : "audio.m4a",
+    type: tipo === "imagen" ? "image/jpeg" : "audio/mp4",
+  } as unknown as Blob);
+
+  const respuesta = await api.post("archivos", formulario, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 30_000,
+  });
+  return respuesta.data.datos.url as string;
+}
 
 export const reportesService = {
   // Obtiene todos los reportes simulando una petición a la API
@@ -42,30 +65,44 @@ export const reportesService = {
   },
 
   // Obtiene los tipos de reporte para saber nombre, ícono y color
+  // Tipos de problema: primero la API; sin conexión, el último listado guardado;
+  // y si nunca se bajó ninguno, la lista que viene en la app (los mismos 8 de la API).
   obtenerTipos: async (): Promise<TipoDeReporte[]> => {
-    return MOCK_TIPOS;
+    try {
+      const respuesta = await api.get("tipos-de-reporte", { timeout: 5000 });
+      const tipos = respuesta.data.datos as TipoDeReporte[];
+      almacen.setItem(CLAVE_TIPOS, JSON.stringify(tipos)).catch(() => {});
+      return tipos;
+    } catch {
+      const guardado = await almacen.getItem(CLAVE_TIPOS);
+      if (guardado) return JSON.parse(guardado) as TipoDeReporte[];
+      return MOCK_TIPOS;
+    }
   },
-
-  // Crea un nuevo reporte y lo agrega a la lista simulada
+  
+  // Crea el reporte en la API: primero sube los archivos y después manda el reporte con sus URLs.
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await new Promise((res) => setTimeout(res, 300));
-    const nuevoReporte: Reporte = {
-      id: `rep-${Date.now()}`,
-      codigo: `GCHU-2026-${Math.floor(Math.random() * 100000)}`,
-      estado: 'recibido',
-      autorId: 'usr-084',
-      cuadrillaId: null,
-      duplicadoDe: null,
-      adhesiones: 0,
-      creadoEn: new Date().toISOString(),
-      sincronizado: false,
-      zonaId: 'zon-norte',
-      ...input,
-    };
-    MOCK_REPORTES.push(nuevoReporte);
-    return { datos: nuevoReporte };
-  },
+    const urlsDeFotos: string[] = [];
+    for (const foto of input.fotos) {
+      urlsDeFotos.push(await subirArchivo(foto.url, "imagen"));
+    }
+    const audioUrl = input.audioUrl
+      ? await subirArchivo(input.audioUrl, "audio")
+      : null;
 
+    const respuesta = await api.post("reportes", {
+      id: input.id,
+      tipoId: input.tipoId,
+      descripcion: input.descripcion,
+      audioUrl,
+      fotos: urlsDeFotos.map((url) => ({ url })),
+      coordenadas: input.coordenadas,
+      direccion: input.direccion,
+      creadoEn: input.creadoEn,
+    });
+    return respuesta.data;
+  },
+  
   //Obtengo un reporte por id
   obtenerMisReportesPorId: async (id: string): Promise<ApiRespuestaExitosa<Reporte | undefined>> => {
     await new Promise((res) => setTimeout(res, 300)); // Simula latencia
