@@ -1,5 +1,8 @@
 import { Reporte, TipoDeReporte, ApiRespuestaExitosa, NuevoReporteInput, CambioDeEstado } from '../tipos';
 import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
+import { avisarAdhesion } from './avisos';
+
+const ADHESIONES = new Set<string>();
 
 export const reportesService = {
   // Obtiene todos los reportes simulando una petición a la API
@@ -65,5 +68,21 @@ export const reportesService = {
         porPagina: cambios.length || 1,
       },
     };
-  }
+  },
+
+    
+  sumarse: async (reporteId: string, usuarioId: string): Promise<ApiRespuestaExitosa<Reporte>> => {
+    await new Promise((res) => setTimeout(res, 300));
+    const reporte = MOCK_REPORTES.find((r) => r.id === reporteId);
+    if (!reporte) throw new Error('No encontramos el reporte.');
+    if (reporte.autorId === usuarioId) throw new Error('No podés sumarte a tu propio reclamo.');
+
+    const clave = `${reporteId}:${usuarioId}`;
+    if (ADHESIONES.has(clave)) throw new Error('Ya te sumaste a este reclamo.');
+
+    ADHESIONES.add(clave);
+    reporte.adhesiones += 1;
+    await avisarAdhesion(reporte);
+    return { datos: reporte };
+  },
 }

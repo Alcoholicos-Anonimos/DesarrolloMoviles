@@ -1,3 +1,4 @@
+import { avisarAdhesion, avisarCambioDeEstado } from "./avisos";
 import {
   CAMBIO_ESTADO,
   MOCK_CUADRILLAS,
@@ -79,6 +80,7 @@ export const bandejaService = {
     const reporte = buscarReporte(reporteId);
     reporte.estado = estado;
     registrarCambio(reporteId, estado, comentario.trim(), operadorId);
+    await avisarCambioDeEstado(reporte, estado, comentario.trim());
     return { datos: reporte };
   },
 
@@ -102,6 +104,7 @@ export const bandejaService = {
       `Asignado a ${cuadrilla.nombre}`,
       operadorId,
     );
+    await avisarCambioDeEstado(reporte, "asignado", `Asignado a ${cuadrilla.nombre}`);
     return { datos: reporte };
   },
 
@@ -129,6 +132,8 @@ export const bandejaService = {
       `Reclamo duplicado de este: ${original.id}`,
       operadorId,
     );
+    await avisarCambioDeEstado(reporte, "rechazado", null);
+    await avisarAdhesion(original);
     return { datos: reporte };
   },
 
