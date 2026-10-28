@@ -149,6 +149,16 @@ export default function ReclamoScreen() {
             gap: espaciados.pequeno,
           }}
         >
+          <Link href="/reclamos/nuevo-reporte" asChild>
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonAgregar,
+                pressed && { opacity: 0.6 },
+              ]}
+            >
+              <Ionicons name="add" size={28} color={colores.texto} />
+            </Pressable>
+          </Link>
           <Link href="/avisos" asChild>
             <Pressable
               style={({ pressed }) => [
@@ -180,23 +190,14 @@ export default function ReclamoScreen() {
             />
           </Pressable>
 
-          <Link href="/reclamos/nuevo-reporte" asChild>
-            <Pressable
-              style={({ pressed }) => [
-                styles.botonAgregar,
-                pressed && { opacity: 0.6 },
-              ]}
-            >
-              <Ionicons name="add" size={28} color={colores.texto} />
-            </Pressable>
-          </Link>
+          
         </View>
       </View>
 
       {/* Indicador de carga si la API / mock está respondiendo */}
       {cargando ? (
         <View style={styles.centro}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <ActivityIndicator size="large"  />
         </View>
       ) : (
         <FlatList

@@ -1,25 +1,12 @@
-import Ionicons from "@react-native-vector-icons/ionicons";
-import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/src/contexto/AuthContext";
-import { bandejaService } from "@/src/servicios/bandeja";
-import { reportesService } from "@/src/servicios/reportes";
-import { FiltrosBandeja } from "@/src/servicios/bandeja";
-import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
 import { ModalAsignarCuadrilla } from "@/components/bandeja/ModalAsignarCuadrilla";
 import { ModalCambiarEstado } from "@/components/bandeja/ModalCambiarEstado";
 import { ModalDuplicado } from "@/components/bandeja/ModalDuplicado";
+import { ModalEscanearQR } from "@/components/bandeja/ModalEscanearQR";
+import { ModalFiltros } from "@/components/bandeja/ModalFiltros";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/src/contexto/AuthContext";
+import { bandejaService, FiltrosBandeja } from "@/src/servicios/bandeja";
+import { reportesService } from "@/src/servicios/reportes";
 import {
   Cuadrilla,
   EstadoReporte,
@@ -33,9 +20,22 @@ import {
   obtenerColoresEstado,
   pesosFuente,
   radios,
-  tipografia,
   tamaniosIconos,
+  tipografia,
 } from "@/styles/theme";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { router } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   recibido: "Recibido",
@@ -69,6 +69,7 @@ export default function BandejaScreen() {
     tipoId: null,
   });
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [mostrarScanner, setMostrarScanner] = useState(false);
   const [reporteAsignar, setReporteAsignar] = useState<Reporte | null>(null);
   const [reporteEstado, setReporteEstado] = useState<Reporte | null>(null);
   const [reporteDuplicado, setReporteDuplicado] = useState<Reporte | null>(null);
@@ -131,6 +132,15 @@ export default function BandejaScreen() {
     router.push({
       pathname: "/reclamos/[id]",
       params: { id: item.id },
+    });
+  };
+
+  const alEscanear = (texto: string) => {
+    setMostrarScanner(false);
+    const encontrado = reportes.find((r) => r.codigo === texto || r.id === texto);
+    router.push({
+      pathname: "/reclamos/[id]",
+      params: { id: encontrado?.id ?? texto },
     });
   };
 
@@ -241,6 +251,19 @@ export default function BandejaScreen() {
               color={colores.texto}
             />
           </Pressable>
+
+          <Pressable
+            onPress={() => setMostrarScanner(true)}
+            hitSlop={8}
+            accessibilityLabel="Escanear código QR"
+          >
+            <Ionicons
+              name="qr-code-outline"
+              size={tamaniosIconos.grande}
+              color={colores.texto}
+            />
+          </Pressable>
+
           <Pressable
             onPress={confirmarCerrarSesion}
             hitSlop={8}
@@ -317,6 +340,12 @@ export default function BandejaScreen() {
           setReporteDuplicado(null);
           cargar();
         }}
+      />
+
+      <ModalEscanearQR
+        visible={mostrarScanner}
+        onCerrar={() => setMostrarScanner(false)}
+        onEscaneado={alEscanear}
       />
     </SafeAreaView>
   );

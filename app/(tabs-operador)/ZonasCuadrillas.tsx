@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   useColorScheme,
@@ -26,7 +26,7 @@ import {
 } from "@/styles/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Chip } from "../../components/cuadrillla/Chip";
-import { reportesService } from "../../src/servicios/reportes";
+import { zonasService } from "../../src/servicios/zonas";
 
 type Colores = ReturnType<typeof obtenerColores>;
 
@@ -48,9 +48,9 @@ export default function ZonasScreen() {
  useEffect(() => {
   (async () => {
     try {
-      const resZonas = await reportesService.listarZonas();
+      const resZonas = await zonasService.listarZonas();
       setZonas(resZonas.datos);
-      const resCuadrillas = await reportesService.listarCuadrillas();
+      const resCuadrillas = await zonasService.listarCuadrillas();
       setCuadrillas(resCuadrillas.datos);
     } catch (error) {
       console.log("Error:", JSON.stringify(error));
@@ -120,14 +120,16 @@ export default function ZonasScreen() {
             </View>
 
             {/* ScrollView porque zonas son solo 4 */}
-            <ScrollView contentContainerStyle={estilos.lista}>
-              {zonasVisibles.length === 0 && (
-                <Text style={estilos.vacio}>No hay zonas cargadas.</Text>
-              )}
-
-              {zonasVisibles.map((zona) => {
-                const deLaZona = cuadrillas.filter((c) => c.zonaId === zona.id);
-
+            <FlatList
+            data={zonasVisibles}
+            keyExtractor={(zonas) => zonas.id}
+            contentContainerStyle={estilos.lista}
+            ListEmptyComponent={
+              <Text style={estilos.vacio}>No hay zonas cargadas.</Text>
+            }
+             renderItem={ ({ item: zona}) => {
+               const deLaZona = cuadrillas.filter((c) => c.zonaId === zona.id);
+              
                 return (
                   <View key={zona.id} style={estilos.tarjeta}>
                     <View style={estilosComunes.filaEntre}>
@@ -178,8 +180,9 @@ export default function ZonasScreen() {
                     ))}
                   </View>
                 );
-              })}
-            </ScrollView>
+              } }
+              />
+          
           
           
 
@@ -187,9 +190,6 @@ export default function ZonasScreen() {
     
   );
 }
-
-
-
 
 const crearEstilos = (c: Colores) =>
   StyleSheet.create({
