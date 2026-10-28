@@ -23,7 +23,7 @@ function formatearFecha(iso: string) {
   return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
 }
 
-// Genera la imagen del QR con un servicio gratuito, sin librería nativa.
+// Generamos la imagen del QR con un servicio gratuito
 function urlQR(texto: string, tamano = 200) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${tamano}x${tamano}&data=${encodeURIComponent(
     texto
@@ -34,16 +34,21 @@ export function crearLinkDetalle(idReporte: string) {
   return Linking.createURL(`/reclamos/${idReporte}`);
 }
 export default function DetalleReporte() {
+// los colores segun el tema del telefono
   const colorScheme = useColorScheme();
-
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const coloresEstado = obtenerColoresEstado(tema);
   const styles = crearStyles(tema); //Creamos el estilo segun el color del modo del dispositivo
+  
+  //ID del reporte que vamos a mostrar
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [reporte, setReporte] = useState<Reporte | null>(null);
+  //las variables que tienen los datos para mostrar
+  const [reporte, setReporte] = useState<Reporte>();
   const [cambios, setCambios] = useState<CambioDeEstado[]>([]);
+
+  //variables auxiliares 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mostrarQR, setMostrarQR] = useState(false);
@@ -60,10 +65,14 @@ export default function DetalleReporte() {
       player.play();
     }
   };
+
+
+  //Hook para setear el sonido
    useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true });
   }, []);
   
+  //Hook para traer los datos de la api
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -72,14 +81,9 @@ export default function DetalleReporte() {
           reportesService.obtenerMisReportesPorId(id),
           reportesService.listarCambiosDeEstado(id),
         ]);
-        setReporte(resReporte.datos ?? null);
-        const cambiosData = resCambios.datos ?? [];
-        // Mostrar del más viejo al más nuevo, para leer el timeline de arriba hacia abajo.
-        setCambios(
-          [...cambiosData].sort((a, b) =>
-            a.fechaHora.localeCompare(b.fechaHora)
-          )
-        );
+        
+        setReporte(resReporte.datos);
+        setCambios(resCambios.datos);
       } catch {
         setError("No pudimos cargar este reclamo. Probá de nuevo.");
       } finally {
@@ -88,6 +92,7 @@ export default function DetalleReporte() {
     })();
   }, [id]);
 
+  //pantalla para cargando
   if (cargando) {
     return (
       <View style={styles.centro}>
@@ -96,6 +101,7 @@ export default function DetalleReporte() {
     );
   }
 
+  //pantalla para error
   if (error || !reporte) {
     return (
       <View style={styles.centro}>
@@ -106,18 +112,22 @@ export default function DetalleReporte() {
     );
   }
 
+  // color para el estado 
   const colorEstado = coloresEstado[reporte.estado];
+  //busca las fotos del reporte, la que esta asociada al problema
   const fotoProblema = reporte.fotos.find((f) => f.momento === "problema");
+    //busca las fotos del reporte, la que esta asociada al arreglo
   const fotoArreglo = reporte.fotos.find((f) => f.momento === "arreglo");
 
-  // El motivo de rechazo vive en el último cambio de estado a "rechazado".
+  // Motivo de rechazo , si lo tiene lo busca, sino null
   const motivoRechazo =
     reporte.estado === "rechazado"
-      ? [...cambios].reverse().find((c) => c.estado === "rechazado")?.comentario
+      ? [...cambios].find((c) => c.estado === "rechazado")?.comentario
       : null;
-
+ // link del QR
   const linkDetalle = crearLinkDetalle(String(reporte.id));
 
+  //pantalla cuando tenemos los datos para mostrar
   return (
     <SafeAreaView style={styles.container}>
       <View style={{ flex: 1 }}>
@@ -132,12 +142,11 @@ export default function DetalleReporte() {
           </Pressable>
         </View>
 
+        {/** ScrollView porque son pocos datos para scrollear */}
         <ScrollView contentContainerStyle={styles.contenido}>
           <Text style={styles.titulo}>{reporte.direccion}</Text>
 
-          <View
-            style={[styles.badge, { backgroundColor: colorEstado.fondo }]}
-          >
+          <View style={[styles.badge, { backgroundColor: colorEstado.fondo }]}  >
             <Text style={[styles.badgeTexto, { color: colorEstado.texto }]}>
               {ETIQUETA_ESTADO[reporte.estado]}
             </Text>
@@ -153,7 +162,7 @@ export default function DetalleReporte() {
             </View>
           )}
 
-          {/* "Rechazado" a secas genera más enojo que no contestar. */}
+          {/* cuando se "Rechazado" el reclamo se muestra el motivo */}
           {motivoRechazo && (
             <View style={styles.cajaMotivo}>
               <Text style={styles.cajaMotivoTitulo}>Por qué se rechazó</Text>
@@ -161,14 +170,17 @@ export default function DetalleReporte() {
             </View>
           )}
 
+          {/** se muestra la foto del reclamo */}
           {fotoProblema && (
             <Image source={{ uri: fotoProblema.url }} style={styles.foto} />
           )}
 
+          {/** se muestra la descripcion del reclamo */}
           {reporte.descripcion && (
             <Text style={styles.descripcion}>{reporte.descripcion}</Text>
           )}
 
+          {/** Si hay audio del reclamo se carga */}
           {reporte.audioUrl && (
             <Pressable style={styles.botonAudio} onPress={alternarAudio}>
               {!statusAudio.isLoaded ? (
@@ -186,7 +198,7 @@ export default function DetalleReporte() {
             </Pressable>
           )}
 
-          {/* La foto del arreglo es lo que más nos van a agradecer. */}
+          {/* Si el reclamo esta "Resuelto" se muestra la foto del arreglo  */}
           {reporte.estado === "resuelto" && fotoArreglo && (
             <View style={styles.bloqueArreglo}>
               <Text style={styles.subtitulo}>Así quedó</Text>
@@ -194,6 +206,7 @@ export default function DetalleReporte() {
             </View>
           )}
 
+          {/** Se muestra el historial de cambios de estado como un time line*/}
           <Text style={styles.subtitulo}>Qué fue pasando</Text>
           <View style={styles.timeline}>
             {cambios.map((c, i) => (
@@ -220,7 +233,7 @@ export default function DetalleReporte() {
           </View>
         </ScrollView>
 
-        {/* QR para mostrarlo en el mostrador — lo escanea la operadora. */}
+        {/* Modal que arma un QR para mostrarlo en el mostrador  */}
         <Modal visible={mostrarQR} transparent animationType="fade">
           <Pressable
             style={styles.fondoModal}
