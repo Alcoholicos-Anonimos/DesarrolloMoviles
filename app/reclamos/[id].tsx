@@ -102,15 +102,18 @@ export default function DetalleReporte() {
   }
 
   //pantalla para error
-  if (error || !reporte) {
-    return (
+ if (error || !reporte) {
+  return (
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.centro}>
         <Text style={styles.textoError}>
           {error ?? "No encontramos este reclamo."}
         </Text>
       </View>
-    );
-  }
+    </>
+  );
+}
 
   // color para el estado 
   const colorEstado = coloresEstado[reporte.estado];
@@ -136,7 +139,7 @@ export default function DetalleReporte() {
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <Ionicons name="arrow-back-outline" size={24} color={colores.texto} />
           </Pressable>
-          <Text style={styles.headerCodigo}>{reporte.codigo}</Text>
+          <Text style={styles.headerCodigo}>{reporte?.codigo}</Text>
           <Pressable onPress={() => setMostrarQR(true)} hitSlop={12}>
             <Ionicons name="qr-code-outline" size={24} color={colores.texto} />
           </Pressable>

@@ -1,29 +1,31 @@
+import { pedirPermiso } from "@/src/servicios/avisos";
+import { avisosActivosDe } from "@/src/servicios/preferenciasAvisos";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { Link, router, useFocusEffect } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
-  ActivityIndicator,
+  StyleSheet,
+  Text,
   useColorScheme,
-  Alert,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Ionicons from "@react-native-vector-icons/ionicons";
-import {
-  obtenerColores,
-  espaciados,
-  radios,
-  tipografia,
-  pesosFuente,
-  obtenerColoresEstado,
-  tamaniosIconos,
-} from "../../styles/theme";
-import { Reporte, TipoDeReporte, EstadoReporte } from "../../src/tipos";
 import { reportesService } from "../../src/servicios/reportes";
-import { router, useFocusEffect } from "expo-router";
-import { Link } from "expo-router";
+import { EstadoReporte, Reporte, TipoDeReporte } from "../../src/tipos";
+import {
+  espaciados,
+  obtenerColores,
+  obtenerColoresEstado,
+  pesosFuente,
+  radios,
+  tamaniosIconos,
+  tipografia,
+} from "../../styles/theme";
+
 import { useAuth } from "@/src/contexto/AuthContext";
 // Función auxiliar para mapear el color y texto según el estado
 const obtenerInfoEstado = (
@@ -72,7 +74,14 @@ export default function ReclamoScreen() {
   const [reportes, setReportes] = useState<Reporte[]>([]);
   const [tipos, setTipos] = useState<TipoDeReporte[]>([]);
   const [cargando, setCargando] = useState(true);
-  const { cerrarSesion } = useAuth();
+  const { cerrarSesion, usuario } = useAuth();
+
+  useEffect(() => {
+    if (!usuario) return;
+    (async () => {
+      if (await avisosActivosDe(usuario.id)) await pedirPermiso();
+    })();
+  }, [usuario]);
 
   const colorScheme = useColorScheme();
   const tema = colorScheme === "dark" ? "dark" : "light";
@@ -140,17 +149,6 @@ export default function ReclamoScreen() {
             gap: espaciados.pequeno,
           }}
         >
-          <Pressable
-            onPress={confirmarCerrarSesion}
-            style={({ pressed }) => [
-              styles.botonAgregar,
-              pressed && { opacity: 0.6 },
-            ]}
-            accessibilityLabel="Cerrar sesión"
-          >
-            <Ionicons name="log-out-outline" size={tamaniosIconos.grande} color={colores.texto} />
-          </Pressable>
-
           <Link href="/reclamos/nuevo-reporte" asChild>
             <Pressable
               style={({ pressed }) => [
@@ -161,13 +159,45 @@ export default function ReclamoScreen() {
               <Ionicons name="add" size={28} color={colores.texto} />
             </Pressable>
           </Link>
+          <Link href="/avisos" asChild>
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonAgregar,
+                pressed && { opacity: 0.6 },
+              ]}
+              accessibilityLabel="Avisos"
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={tamaniosIconos.grande}
+                color={colores.texto}
+              />
+            </Pressable>
+          </Link>
+
+          <Pressable
+            onPress={confirmarCerrarSesion}
+            style={({ pressed }) => [
+              styles.botonAgregar,
+              pressed && { opacity: 0.6 },
+            ]}
+            accessibilityLabel="Cerrar sesión"
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={tamaniosIconos.grande}
+              color={colores.texto}
+            />
+          </Pressable>
+
+          
         </View>
       </View>
 
       {/* Indicador de carga si la API / mock está respondiendo */}
       {cargando ? (
         <View style={styles.centro}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <ActivityIndicator size="large"  />
         </View>
       ) : (
         <FlatList
@@ -238,88 +268,88 @@ const crearStyles = (tema: "light" | "dark") => {
   const colores = obtenerColores(tema);
 
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colores.fondo,
-    paddingHorizontal: espaciados.extraGrande,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colores.fondo,
+      paddingHorizontal: espaciados.extraGrande,
+    },
 
-  centro: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    centro: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
 
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: espaciados.grande,
-  },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingVertical: espaciados.grande,
+    },
 
-  titulo: {
-    ...tipografia.tituloPantalla,
-    color: colores.texto,
-  },
+    titulo: {
+      ...tipografia.tituloPantalla,
+      color: colores.texto,
+    },
 
-  botonAgregar: {
-    padding: espaciados.pequeno,
-  },
+    botonAgregar: {
+      padding: espaciados.pequeno,
+    },
 
-  listaContainer: {
-    paddingTop: espaciados.pequeno,
-  },
+    listaContainer: {
+      paddingTop: espaciados.pequeno,
+    },
 
-  separador: {
-    height: 1,
-    backgroundColor: colores.bordeSuave,
-    marginVertical: espaciados.xs,
-  },
+    separador: {
+      height: 1,
+      backgroundColor: colores.bordeSuave,
+      marginVertical: espaciados.xs,
+    },
 
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: espaciados.medio,
-  },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: espaciados.medio,
+    },
 
-  iconoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: radios.medio,
-    backgroundColor: colores.superficie,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: espaciados.medio,
-  },
+    iconoBox: {
+      width: 44,
+      height: 44,
+      borderRadius: radios.medio,
+      backgroundColor: colores.superficie,
+      justifyContent: "center",
+      alignItems: "center",
+      marginRight: espaciados.medio,
+    },
 
-  infoCentral: {
-    flex: 1,
-    justifyContent: "center",
-  },
+    infoCentral: {
+      flex: 1,
+      justifyContent: "center",
+    },
 
-  textoPrincipal: {
-    ...tipografia.texto,
-    color: colores.texto,
-    fontWeight: pesosFuente.seminegrita,
-    marginBottom: espaciados.xs,
-  },
+    textoPrincipal: {
+      ...tipografia.texto,
+      color: colores.texto,
+      fontWeight: pesosFuente.seminegrita,
+      marginBottom: espaciados.xs,
+    },
 
-  textoCodigo: {
-    ...tipografia.textoSecundario,
-    color: colores.textoSecundario,
-  },
+    textoCodigo: {
+      ...tipografia.textoSecundario,
+      color: colores.textoSecundario,
+    },
 
-  badgeEstado: {
-    paddingHorizontal: 10,
-    paddingVertical: espaciados.xs,
-    borderRadius: radios.pequeno,
-    borderWidth: 1,
-    marginLeft: espaciados.pequeno,
-  },
+    badgeEstado: {
+      paddingHorizontal: 10,
+      paddingVertical: espaciados.xs,
+      borderRadius: radios.pequeno,
+      borderWidth: 1,
+      marginLeft: espaciados.pequeno,
+    },
 
-  textoBadge: {
-    ...tipografia.textoSecundario,
-    fontWeight: pesosFuente.seminegrita,
-  },
-});
+    textoBadge: {
+      ...tipografia.textoSecundario,
+      fontWeight: pesosFuente.seminegrita,
+    },
+  });
 };
