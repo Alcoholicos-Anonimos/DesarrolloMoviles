@@ -1,7 +1,8 @@
 import { sesionService } from '@/src/servicios/sesion';
 import axios from 'axios';
 export const api = axios.create({
- baseURL: process.env.EXPO_PUBLIC_API_URL ,
+ baseURL: process.env.EXPO_PUBLIC_API_URL, 
+   
  timeout: 10_000,
  headers: { 'Content-Type': 'application/json' },
 });
