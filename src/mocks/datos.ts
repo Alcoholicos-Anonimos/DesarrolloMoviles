@@ -1,12 +1,14 @@
 import { CambioDeEstado, Cuadrilla, Reporte, TipoDeReporte, Usuario, Zona } from '../tipos';
 
 export const MOCK_TIPOS: TipoDeReporte[] = [
-  { id: 'tip-bache', nombre: 'Bache', icono: 'warning-outline', color: '#EF4444', areaResponsable: 'Obras Públicas' },
-  { id: 'tip-luz', nombre: 'Luminaria', icono: 'flash-off-outline', color: '#E5A93C', areaResponsable: 'Electrotecnia' },
-  { id: 'tip-rama', nombre: 'Rama caída', icono: 'leaf-outline', color: '#2D6A4F', areaResponsable: 'Espacios Verdes' },
-  { id: 'tip-basura', nombre: 'Basura', icono: 'trash-outline', color: '#5B8C5A', areaResponsable: 'Higiene Urbana' },
-  { id: 'tip-agua', nombre: 'Agua', icono: 'water-outline', color: '#3B82F6', areaResponsable: 'Obras Sanitarias' },
-  { id: 'tip-otro', nombre: 'Otro', icono: 'ellipsis-horizontal-outline', color: '#9CA3AF', areaResponsable: 'Mesa de Entradas' },
+  { id: 'tip-bache', nombre: 'Bache', icono: 'construct', color: '#E67E22', areaResponsable: 'Obras Públicas' },
+  { id: 'tip-luminaria', nombre: 'Luminaria apagada', icono: 'bulb', color: '#F1C40F', areaResponsable: 'Alumbrado Público' },
+  { id: 'tip-basura', nombre: 'Basura acumulada', icono: 'trash', color: '#7F8C8D', areaResponsable: 'Higiene Urbana' },
+  { id: 'tip-rama', nombre: 'Rama o árbol caído', icono: 'leaf', color: '#27AE60', areaResponsable: 'Espacios Verdes' },
+  { id: 'tip-agua', nombre: 'Pérdida de agua o cloaca', icono: 'water', color: '#2980B9', areaResponsable: 'Obras Sanitarias' },
+  { id: 'tip-semaforo', nombre: 'Semáforo con falla', icono: 'stop-circle', color: '#C0392B', areaResponsable: 'Tránsito' },
+  { id: 'tip-vereda', nombre: 'Vereda rota', icono: 'walk', color: '#8E44AD', areaResponsable: 'Obras Públicas' },
+  { id: 'tip-otro', nombre: 'Otro problema', icono: 'ellipsis-horizontal-circle', color: '#34495E', areaResponsable: 'Centro de Atención al Vecino' },
 ];
 
 export const MOCK_REPORTES: Reporte[] = [
@@ -31,7 +33,7 @@ export const MOCK_REPORTES: Reporte[] = [
   {
     id: 'rep-00398',
     codigo: 'GCHU-2026-00398',
-    tipoId: 'tip-luz',
+    tipoId: 'tip-luminaria',
     descripcion: 'Luminaria rota tras la tormenta.',
     audioUrl: null,
     fotos: [{ id: 'fot-902', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5', momento: 'problema' }],
@@ -85,7 +87,7 @@ export const MOCK_REPORTES: Reporte[] = [
   {
     id: 'rep-00423',
     codigo: 'GCHU-2026-00423',
-    tipoId: 'tip-luz',
+    tipoId: 'tip-luminaria',
     descripcion: null, // solo audio, sin texto
     audioUrl: 'https://api.gchu.gob.ar/a/423.m4a',
     fotos: [{ id: 'fot-905', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5', momento: 'problema' }],

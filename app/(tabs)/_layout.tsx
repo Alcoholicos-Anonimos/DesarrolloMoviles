@@ -1,6 +1,6 @@
+import Ionicons from '@react-native-vector-icons/ionicons';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import Ionicons from '@react-native-vector-icons/ionicons';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
@@ -13,9 +13,16 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarStyle: {
+          backgroundColor: Colors[colorScheme ?? 'light'].background,
+        },
+        sceneStyle: {
+          backgroundColor: Colors[colorScheme ?? 'light'].background,
+        },
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{ href: null }}

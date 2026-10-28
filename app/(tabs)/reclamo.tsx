@@ -97,24 +97,39 @@ export default function ReclamoScreen() {
   };
 
   // Carga asíncrona desde la capa de servicios
-  useFocusEffect(() => {
+ useFocusEffect(
+  React.useCallback(() => {
+    let activo = true;
+
     const cargarDatos = async () => {
       try {
         const [respReportes, respTipos] = await Promise.all([
           reportesService.obtenerMisReportes(),
           reportesService.obtenerTipos(),
         ]);
-        setReportes(respReportes.datos);
-        setTipos(respTipos);
+
+        if (activo) {
+          setReportes(respReportes.datos);
+          setTipos(respTipos.datos);
+          setCargando(false);
+        }
       } catch (error) {
         console.error("Error al cargar los reclamos:", error);
       } finally {
-        setCargando(false);
+        if (activo) {
+          setCargando(false);
+        }
       }
     };
 
+    setCargando(true);
     cargarDatos();
-  });
+
+    return () => {
+      activo = false;
+    };
+  }, []),
+);
 
   // Función para obtener el tipo de reporte vinculado
   const obtenerTipo = (tipoId: string) => {

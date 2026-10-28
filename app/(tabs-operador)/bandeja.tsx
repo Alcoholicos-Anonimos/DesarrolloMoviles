@@ -91,7 +91,7 @@ export default function BandejaScreen() {
           bandejaService.obtenerZonas(),
         ]);
       setReportes(respReportes.datos);
-      setTipos(respTipos);
+      setTipos(respTipos.datos);
       setCuadrillas(respCuadrillas);
       setZonas(respZonas);
     } catch {

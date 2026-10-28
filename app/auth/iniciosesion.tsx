@@ -1,3 +1,5 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAuth } from "@/src/contexto/AuthContext";
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -14,16 +16,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "@/src/contexto/AuthContext";
 
 import {
-  obtenerColores,
   espaciados,
-  radios,
-  tipografia,
+  obtenerColores,
   pesosFuente,
+  radios,
   tamaniosIconos,
+  tipografia,
 } from "@/styles/theme";
 
 // Formato básico de email: algo@algo.algo
@@ -38,8 +38,14 @@ export default function InicioSesionScreen() {
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const styles = crearStyles(tema);
-  const { iniciarSesion } = useAuth();
+  const {
+    iniciarSesion,
+    biometriaHabilitada,
+    biometriaDisponible,
+    iniciarSesionBiometrica,
+  } = useAuth();
   const [cargando, setCargando] = useState(false);
+  const [biometriaEnUso, setBiometriaEnUso] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const ingresar = async () => {
@@ -66,6 +72,22 @@ export default function InicioSesionScreen() {
 
   const olvideContrasena = () => {
     Alert.alert("Próximamente", "La recuperación de contraseña todavía no está disponible.");
+  };
+
+  // Ingreso con huella, rostro o patrón/PIN del teléfono: restaura la sesión
+  // guardada o, si se cerró la sesión, relanza el login con las credenciales
+  // biométricas guardadas.
+  const ingresarConBiometria = async () => {
+    setError(null);
+    setBiometriaEnUso(true);
+    try {
+      const ok = await iniciarSesionBiometrica();
+      if (!ok) {
+        setError("No pudimos validar tu identidad. Ingresá con tu contraseña.");
+      }
+    } finally {
+      setBiometriaEnUso(false);
+    }
   };
 
   return (
@@ -153,10 +175,35 @@ export default function InicioSesionScreen() {
             )}
           </Pressable>
 
+          {/* INGRESO RÁPIDO: huella, rostro o patrón del teléfono */}
+          {biometriaHabilitada && biometriaDisponible && (
+            <Pressable
+              onPress={ingresarConBiometria}
+              disabled={cargando || biometriaEnUso}
+              style={({ pressed }) => [
+                styles.botonBiometria,
+                (pressed || biometriaEnUso) && styles.botonPresionado,
+              ]}
+            >
+              {biometriaEnUso ? (
+                <ActivityIndicator color={colores.texto} />
+              ) : (
+                <Ionicons
+                  name="finger-print"
+                  size={tamaniosIconos.medio}
+                  color={colores.texto}
+                />
+              )}
+              <Text style={styles.textoBotonBiometria}>
+                Ingresar con huella, rostro o patrón
+              </Text>
+            </Pressable>
+          )}
+
           {/* REGISTRO */}
           <View style={styles.filaRegistro}>
             <Text style={styles.textoSecundario}>¿No tenés cuenta?</Text>
-            <Pressable onPress={() => router.push("/registro")} hitSlop={8}>
+            <Pressable onPress={() => router.push("/auth/registro")} hitSlop={8}>
               <Text style={styles.textoEnlace}>Registrate</Text>
             </Pressable>
           </View>
@@ -295,6 +342,26 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       ...tipografia.texto,
       fontWeight: pesosFuente.medio,
       color: colores.blanco,
+    },
+
+    // Botón de ingreso biométrico (secundario)
+    botonBiometria: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: espaciados.pequeno,
+      marginTop: espaciados.medio,
+      paddingVertical: espaciados.medio,
+      borderRadius: radios.redondo,
+      borderWidth: 1,
+      borderColor: colores.borde,
+      backgroundColor: colores.superficie,
+      minHeight: 44,
+    },
+    textoBotonBiometria: {
+      ...tipografia.texto,
+      fontWeight: pesosFuente.medio,
+      color: colores.texto,
     },
 
   });

@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, Modal, Image, ActivityIndicator } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import Ionicons from "@react-native-vector-icons/ionicons";
-import { reportesService } from "../../src/servicios/reportes";
-import { CambioDeEstado, EstadoReporte, Reporte, TipoDeReporte } from "../../src/tipos";
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { obtenerColores, espaciados, radios, tipografia, pesosFuente, estilosComunes, obtenerColoresEstado } from "../../styles/theme";
+import Ionicons from "@react-native-vector-icons/ionicons";
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import * as Linking from "expo-linking";
+import { router, Stack, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { reportesService } from "../../src/servicios/reportes";
+import { CambioDeEstado, EstadoReporte, Reporte } from "../../src/tipos";
+import { espaciados, estilosComunes, obtenerColores, obtenerColoresEstado, pesosFuente, radios, tipografia } from "../../styles/theme";
 
 const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   recibido: "Recibido",
@@ -22,7 +23,7 @@ function formatearFecha(iso: string) {
   return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
 }
 
-// Genera la imagen del QR con un servicio gratuito, sin librería nativa.
+// Generamos la imagen del QR con un servicio gratuito
 function urlQR(texto: string, tamano = 200) {
   return `https://api.qrserver.com/v1/create-qr-code/?size=${tamano}x${tamano}&data=${encodeURIComponent(
     texto
@@ -32,22 +33,46 @@ function urlQR(texto: string, tamano = 200) {
 export function crearLinkDetalle(idReporte: string) {
   return Linking.createURL(`/reclamos/${idReporte}`);
 }
-export default function DetalleReporte(){
+export default function DetalleReporte() {
+// los colores segun el tema del telefono
   const colorScheme = useColorScheme();
-
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const coloresEstado = obtenerColoresEstado(tema);
   const styles = crearStyles(tema); //Creamos el estilo segun el color del modo del dispositivo
+  
+  //ID del reporte que vamos a mostrar
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const [reporte, setReporte] = useState<Reporte | null>(null);
+  //las variables que tienen los datos para mostrar
+  const [reporte, setReporte] = useState<Reporte>();
   const [cambios, setCambios] = useState<CambioDeEstado[]>([]);
+
+  //variables auxiliares 
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mostrarQR, setMostrarQR] = useState(false); 
+  const [mostrarQR, setMostrarQR] = useState(false);
+  const player = useAudioPlayer(reporte?.audioUrl ?? null);
+  const statusAudio = useAudioPlayerStatus(player);
 
+  const alternarAudio = () => {
+    if (statusAudio.playing) {
+      player.pause();
+    } else {
+      if (statusAudio.didJustFinish || statusAudio.currentTime >= statusAudio.duration) {
+        player.seekTo(0);
+      }
+      player.play();
+    }
+  };
+
+
+  //Hook para setear el sonido
+   useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true });
+  }, []);
   
+  //Hook para traer los datos de la api
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -56,14 +81,9 @@ export default function DetalleReporte(){
           reportesService.obtenerMisReportesPorId(id),
           reportesService.listarCambiosDeEstado(id),
         ]);
-        setReporte(resReporte.datos ?? null);
-        const cambiosData = resCambios.datos ?? [];
-        // Mostrar del más viejo al más nuevo, para leer el timeline de arriba hacia abajo.
-        setCambios(
-          [...cambiosData].sort((a, b) =>
-            a.fechaHora.localeCompare(b.fechaHora)
-          )
-        );
+        
+        setReporte(resReporte.datos);
+        setCambios(resCambios.datos);
       } catch {
         setError("No pudimos cargar este reclamo. Probá de nuevo.");
       } finally {
@@ -72,6 +92,7 @@ export default function DetalleReporte(){
     })();
   }, [id]);
 
+  //pantalla para cargando
   if (cargando) {
     return (
       <View style={styles.centro}>
@@ -80,6 +101,7 @@ export default function DetalleReporte(){
     );
   }
 
+  //pantalla para error
   if (error || !reporte) {
     return (
       <View style={styles.centro}>
@@ -90,129 +112,146 @@ export default function DetalleReporte(){
     );
   }
 
+  // color para el estado 
   const colorEstado = coloresEstado[reporte.estado];
+  //busca las fotos del reporte, la que esta asociada al problema
   const fotoProblema = reporte.fotos.find((f) => f.momento === "problema");
+    //busca las fotos del reporte, la que esta asociada al arreglo
   const fotoArreglo = reporte.fotos.find((f) => f.momento === "arreglo");
 
-  // El motivo de rechazo vive en el último cambio de estado a "rechazado".
+  // Motivo de rechazo , si lo tiene lo busca, sino null
   const motivoRechazo =
     reporte.estado === "rechazado"
-      ? [...cambios].reverse().find((c) => c.estado === "rechazado")?.comentario
+      ? [...cambios].find((c) => c.estado === "rechazado")?.comentario
       : null;
-
+ // link del QR
   const linkDetalle = crearLinkDetalle(String(reporte.id));
 
+  //pantalla cuando tenemos los datos para mostrar
   return (
     <SafeAreaView style={styles.container}>
       <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back-outline" size={24} color={colores.texto}/>
-        </Pressable>
-        <Text style={styles.headerCodigo}>{reporte.codigo}</Text>
-        <Pressable onPress={() => setMostrarQR(true)} hitSlop={12}>
-          <Ionicons name="qr-code-outline" size={24}  color={colores.texto}/>
-        </Pressable>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.contenido}>
-        <Text style={styles.titulo}>{reporte.direccion}</Text>
-
-        <View
-          style={[styles.badge, { backgroundColor: colorEstado.fondo }]}
-        >
-          <Text style={[styles.badgeTexto, { color: colorEstado.texto }]}>
-            {ETIQUETA_ESTADO[reporte.estado]}
-          </Text>
-        </View>
-
-        {reporte.adhesiones > 0 && (
-          <View style={styles.filaAdhesiones}>
-            <Ionicons name="people-outline" size={14} color={colores.textoSecundario} />
-            <Text style={styles.textoAdhesiones}>
-              {reporte.adhesiones} vecino{reporte.adhesiones === 1 ? "" : "s"}{" "}
-              se sumaron
-            </Text>
-          </View>
-        )}
-
-        {/* "Rechazado" a secas genera más enojo que no contestar. */}
-        {motivoRechazo && (
-          <View style={styles.cajaMotivo}>
-            <Text style={styles.cajaMotivoTitulo}>Por qué se rechazó</Text>
-            <Text style={styles.cajaMotivoTexto}>{motivoRechazo}</Text>
-          </View>
-        )}
-
-        {fotoProblema && (
-          <Image source={{ uri: fotoProblema.url }} style={styles.foto} />
-        )}
-
-        {reporte.descripcion && (
-          <Text style={styles.descripcion}>{reporte.descripcion}</Text>
-        )}
-
-        {reporte.audioUrl && (
-          <Pressable style={styles.botonAudio}>
-            <Ionicons name="play-circle-outline" size={20} color={colores.texto} />
-            <Text style={styles.botonAudioTexto}>Escuchar nota de voz</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="arrow-back-outline" size={24} color={colores.texto} />
           </Pressable>
-        )}
-
-        {/* La foto del arreglo es lo que más nos van a agradecer. */}
-        {reporte.estado === "resuelto" && fotoArreglo && (
-          <View style={styles.bloqueArreglo}>
-            <Text style={styles.subtitulo}>Así quedó</Text>
-            <Image source={{ uri: fotoArreglo.url }} style={styles.foto} />
-          </View>
-        )}
-
-        <Text style={styles.subtitulo}>Qué fue pasando</Text>
-        <View style={styles.timeline}>
-          {cambios.map((c, i) => (
-            <View key={c.id} style={styles.timelineItem}>
-              <View
-                style={[
-                  styles.timelineDot,
-                  i === cambios.length - 1 && styles.timelineDotActivo,
-                ]}
-              />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.timelineFecha}>
-                  {formatearFecha(c.fechaHora)}
-                </Text>
-                <Text style={styles.timelineEstado}>
-                  {ETIQUETA_ESTADO[c.estado]}
-                </Text>
-                {c.comentario && (
-                  <Text style={styles.timelineComentario}>{c.comentario}</Text>
-                )}
-              </View>
-            </View>
-          ))}
+          <Text style={styles.headerCodigo}>{reporte.codigo}</Text>
+          <Pressable onPress={() => setMostrarQR(true)} hitSlop={12}>
+            <Ionicons name="qr-code-outline" size={24} color={colores.texto} />
+          </Pressable>
         </View>
-      </ScrollView>
 
-      {/* QR para mostrarlo en el mostrador — lo escanea la operadora. */}
-      <Modal visible={mostrarQR} transparent animationType="fade">
-        <Pressable
-          style={styles.fondoModal}
-          onPress={() => setMostrarQR(false)}
-        >
-          <View style={styles.tarjetaQR}>
-            <Image
-              source={{ uri: urlQR(linkDetalle) }}
-              style={{ width: 200, height: 200 }}
-            />
-            <Text style={styles.textoQR}>{reporte.codigo}</Text>
-            <Text style={styles.subtextoQR}>
-              Mostrá esto en el mostrador
+        {/** ScrollView porque son pocos datos para scrollear */}
+        <ScrollView contentContainerStyle={styles.contenido}>
+          <Text style={styles.titulo}>{reporte.direccion}</Text>
+
+          <View style={[styles.badge, { backgroundColor: colorEstado.fondo }]}  >
+            <Text style={[styles.badgeTexto, { color: colorEstado.texto }]}>
+              {ETIQUETA_ESTADO[reporte.estado]}
             </Text>
           </View>
-        </Pressable>
-      </Modal>
-    </View>
+
+          {reporte.adhesiones > 0 && (
+            <View style={styles.filaAdhesiones}>
+              <Ionicons name="people-outline" size={14} color={colores.textoSecundario} />
+              <Text style={styles.textoAdhesiones}>
+                {reporte.adhesiones} vecino{reporte.adhesiones === 1 ? "" : "s"}{" "}
+                se sumaron
+              </Text>
+            </View>
+          )}
+
+          {/* cuando se "Rechazado" el reclamo se muestra el motivo */}
+          {motivoRechazo && (
+            <View style={styles.cajaMotivo}>
+              <Text style={styles.cajaMotivoTitulo}>Por qué se rechazó</Text>
+              <Text style={styles.cajaMotivoTexto}>{motivoRechazo}</Text>
+            </View>
+          )}
+
+          {/** se muestra la foto del reclamo */}
+          {fotoProblema && (
+            <Image source={{ uri: fotoProblema.url }} style={styles.foto} />
+          )}
+
+          {/** se muestra la descripcion del reclamo */}
+          {reporte.descripcion && (
+            <Text style={styles.descripcion}>{reporte.descripcion}</Text>
+          )}
+
+          {/** Si hay audio del reclamo se carga */}
+          {reporte.audioUrl && (
+            <Pressable style={styles.botonAudio} onPress={alternarAudio}>
+              {!statusAudio.isLoaded ? (
+                <ActivityIndicator size="small" />
+              ) : (
+                <Ionicons
+                  name={statusAudio.playing ? "pause-circle-outline" : "play-circle-outline"}
+                  size={20}
+                  color={colores.texto}
+                />
+              )}
+              <Text style={styles.botonAudioTexto}>
+                {statusAudio.playing ? "Pausar nota de voz" : "Escuchar nota de voz"}
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Si el reclamo esta "Resuelto" se muestra la foto del arreglo  */}
+          {reporte.estado === "resuelto" && fotoArreglo && (
+            <View style={styles.bloqueArreglo}>
+              <Text style={styles.subtitulo}>Así quedó</Text>
+              <Image source={{ uri: fotoArreglo.url }} style={styles.foto} />
+            </View>
+          )}
+
+          {/** Se muestra el historial de cambios de estado como un time line*/}
+          <Text style={styles.subtitulo}>Qué fue pasando</Text>
+          <View style={styles.timeline}>
+            {cambios.map((c, i) => (
+              <View key={c.id} style={styles.timelineItem}>
+                <View
+                  style={[
+                    styles.timelineDot,
+                    i === cambios.length - 1 && styles.timelineDotActivo,
+                  ]}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.timelineFecha}>
+                    {formatearFecha(c.fechaHora)}
+                  </Text>
+                  <Text style={styles.timelineEstado}>
+                    {ETIQUETA_ESTADO[c.estado]}
+                  </Text>
+                  {c.comentario && (
+                    <Text style={styles.timelineComentario}>{c.comentario}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* Modal que arma un QR para mostrarlo en el mostrador  */}
+        <Modal visible={mostrarQR} transparent animationType="fade">
+          <Pressable
+            style={styles.fondoModal}
+            onPress={() => setMostrarQR(false)}
+          >
+            <View style={styles.tarjetaQR}>
+              <Image
+                source={{ uri: urlQR(linkDetalle) }}
+                style={{ width: 200, height: 200 }}
+              />
+              <Text style={styles.textoQR}>{reporte.codigo}</Text>
+              <Text style={styles.subtextoQR}>
+                Mostrá esto en el mostrador
+              </Text>
+            </View>
+          </Pressable>
+        </Modal>
+      </View>
     </SafeAreaView>
   );
 }
@@ -247,8 +286,8 @@ const crearStyles = (colorScheme: "light" | "dark") => {
     },
 
     headerCodigo: {
-   ...tipografia.tituloPantalla,
-     color: colores.texto,
+      ...tipografia.tituloPantalla,
+      color: colores.texto,
     },
 
     contenido: {
@@ -279,8 +318,8 @@ const crearStyles = (colorScheme: "light" | "dark") => {
           borderRadius: radios.redondo,
           paddingVertical: 10,
           paddingHorizontal: espaciados.grande,*/
-          ...tipografia.textoSecundario,
-    fontWeight: pesosFuente.seminegrita,
+      ...tipografia.textoSecundario,
+      fontWeight: pesosFuente.seminegrita,
     },
 
     filaAdhesiones: {

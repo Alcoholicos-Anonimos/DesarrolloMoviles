@@ -94,7 +94,7 @@ function NavegacionRaiz() {
         </Stack.Protected>
 
         <Stack.Protected guard={esOperador}>
-          <Stack.Screen name="reclamos/bandeja" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs-operador)" options={{ headerShown: false }} />
         </Stack.Protected>
 
        

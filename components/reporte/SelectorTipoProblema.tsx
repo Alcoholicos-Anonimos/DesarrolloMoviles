@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import {
-    Pressable,
-    StyleSheet,
-    Text,
-    useColorScheme,
-    View,
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
 } from "react-native";
 import { reportesService } from "../../src/servicios/reportes";
 import { TipoDeReporte } from "../../src/tipos";
 import {
-    espaciados,
-    obtenerColores,
-    radios,
-    tipografia,
+  espaciados,
+  obtenerColores,
+  radios,
+  tipografia,
 } from "../../styles/theme";
 
 type Props = {
@@ -32,7 +32,7 @@ export function SelectorTipoProblema({
 
   useEffect(() => {
     reportesService.obtenerTipos().then((tipos) => {
-      setTiposDisponibles(tipos);
+      setTiposDisponibles(tipos.datos);
     });
   }, []);
 

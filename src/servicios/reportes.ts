@@ -1,88 +1,102 @@
-import { Reporte, TipoDeReporte, ApiRespuestaExitosa, NuevoReporteInput, CambioDeEstado } from '../tipos';
-import { CAMBIO_ESTADO, MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
-import { avisarAdhesion } from './avisos';
 
-const ADHESIONES = new Set<string>();
+import { MOCK_REPORTES } from '../mocks/datos';
+import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
+
+import { api } from '@/api/clienteHttp';
+
+const CLAVE_TIPOS = "catalogo_tipos_de_reporte";
+
+// Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
+async function subirArchivo(
+  uriLocal: string,
+  tipo: "imagen" | "audio",
+): Promise<string> {
+  const formulario = new FormData();
+  formulario.append("archivo", {
+    uri: uriLocal,
+    name: tipo === "imagen" ? "foto.jpg" : "audio.m4a",
+    type: tipo === "imagen" ? "image/jpeg" : "audio/mp4",
+  } as unknown as Blob);
+
+  const respuesta = await api.post("archivos", formulario, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 30_000,
+  });
+  return respuesta.data.datos.url as string;
+}
 
 export const reportesService = {
-  // Obtiene todos los reportes simulando una petición a la API
+
   obtenerMisReportes: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
-    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
+    const resp = await api.get("yo/reportes");
+    return resp.data;
+
+  },
+
+  // Reportes públicos para el mapa de la ciudad (cualquier vecino los ve)
+  obtenerReportesPublicos: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
+    const resp = await api.get("reportes");
+    return resp.data;
+  },
+
+  // Un vecino se suma a un reporte existente en vez de crear otro duplicado
+
+  sumarseAReporte: async (id: string): Promise<{ status: number; datos: Reporte }> => {
+    const resp = await api.post("reportes/" + id + "/adhesiones");
+
     return {
-      datos: MOCK_REPORTES,
-      meta: {
-        total: MOCK_REPORTES.length,
-        pagina: 1,
-        porPagina: 20,
-      },
+      status: resp.status,
+      datos: resp.data.datos,
     };
   },
 
-  // Obtiene los tipos de reporte para saber nombre, ícono y color
-  obtenerTipos: async (): Promise<TipoDeReporte[]> => {
-    return MOCK_TIPOS;
+
+  obtenerTipos: async (): Promise<ApiRespuestaExitosa<TipoDeReporte[]>> => {
+    const resp = await api.get("tipos-de-reporte");
+    return resp.data;
   },
 
-  // Crea un nuevo reporte y lo agrega a la lista simulada
+  // Crea el reporte en la API: primero sube los archivos y después manda el reporte con sus URLs.
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await new Promise((res) => setTimeout(res, 300));
-    const nuevoReporte: Reporte = {
-      id: `rep-${Date.now()}`,
-      codigo: `GCHU-2026-${Math.floor(Math.random() * 100000)}`,
-      estado: 'recibido',
-      autorId: 'usr-084',
-      cuadrillaId: null,
-      duplicadoDe: null,
-      adhesiones: 0,
-      creadoEn: new Date().toISOString(),
-      sincronizado: false,
-      zonaId: 'zon-norte',
-      ...input,
-    };
-    MOCK_REPORTES.push(nuevoReporte);
-    return { datos: nuevoReporte };
+    const urlsDeFotos: string[] = [];
+    for (const foto of input.fotos) {
+      urlsDeFotos.push(await subirArchivo(foto.url, "imagen"));
+    }
+    const audioUrl = input.audioUrl
+      ? await subirArchivo(input.audioUrl, "audio")
+      : null;
+
+    const respuesta = await api.post("reportes", {
+      id: input.id,
+      tipoId: input.tipoId,
+      descripcion: input.descripcion,
+      audioUrl,
+      fotos: urlsDeFotos.map((url) => ({ url })),
+      coordenadas: input.coordenadas,
+      direccion: input.direccion,
+      creadoEn: input.creadoEn,
+    });
+    return respuesta.data;
   },
 
   //Obtengo un reporte por id
-  obtenerMisReportesPorId: async (id: string): Promise<ApiRespuestaExitosa<Reporte | undefined>> => {
-    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
-    return {
-      datos: MOCK_REPORTES.find(x => x.id === id),
-      meta: {
-        total: 1,
-        pagina: 1,
-        porPagina: 1,
-      },
-    };
+  obtenerMisReportesPorId: async (id: string): Promise<ApiRespuestaExitosa<Reporte>> => {
+    const resp = await api.get("reportes/" + id);
+    return resp.data;
   },
 
-
-  listarCambiosDeEstado : async (id:string) : Promise <ApiRespuestaExitosa <CambioDeEstado[] | undefined>> =>{
-    await new Promise((res) => setTimeout(res, 300)); // Simula latencia
-    const cambios = CAMBIO_ESTADO.filter(x => x.reporteId === id);
-    return {
-      datos: cambios.length ? cambios : undefined,
-      meta: {
-        total: cambios.length,
-        pagina: 1,
-        porPagina: cambios.length || 1,
-      },
-    };
+  listarCambiosDeEstado: async (id: string): Promise<ApiRespuestaExitosa<CambioDeEstado[]>> => {
+    const resp = await api.get("reportes/" + id + "/cambios");
+    return resp.data;
   },
 
-    
-  sumarse: async (reporteId: string, usuarioId: string): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await new Promise((res) => setTimeout(res, 300));
-    const reporte = MOCK_REPORTES.find((r) => r.id === reporteId);
-    if (!reporte) throw new Error('No encontramos el reporte.');
-    if (reporte.autorId === usuarioId) throw new Error('No podés sumarte a tu propio reclamo.');
+  listarZonas: async (): Promise<ApiRespuestaExitosa<Zona[]>> => {
+    const respuesta = await api.get("zonas");
+    return respuesta.data;
+  },
 
-    const clave = `${reporteId}:${usuarioId}`;
-    if (ADHESIONES.has(clave)) throw new Error('Ya te sumaste a este reclamo.');
-
-    ADHESIONES.add(clave);
-    reporte.adhesiones += 1;
-    await avisarAdhesion(reporte);
-    return { datos: reporte };
+  listarCuadrillas: async (): Promise<ApiRespuestaExitosa<Cuadrilla[]>> => {
+    const resp = await api.get("cuadrillas");
+    return resp.data;
   },
 }
