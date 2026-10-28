@@ -101,7 +101,7 @@ export default function ReclamoScreen() {
 
         if (activo) {
           setReportes(respReportes.datos);
-          setTipos(respTipos);
+          setTipos(respTipos.datos);
           setCargando(false);
         }
       } catch (error) {

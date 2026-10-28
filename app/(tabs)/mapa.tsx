@@ -6,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, AppState, Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { reportesService } from '../../src/servicios/reportes';
@@ -55,7 +55,7 @@ export default function MapaScreen() {
   interface FiltrosMapa {
     tipoId: string | null;
     estado: EstadoReporte | null;
-    }
+  }
   const [filtros, setFiltros] = useState<FiltrosMapa>(FILTROS_POR_DEFECTO);
   const hayFiltrosActivos = filtros.tipoId !== null || filtros.estado !== null;
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
@@ -73,7 +73,7 @@ export default function MapaScreen() {
     longitudeDelta: 0.00999,
   });
   const mapRef = useRef<MapView>(null);   //Referencia al mapa para moverlo cuando llega la posición del GPS
-  
+
   const ocultarPOI = [//Para ocultar los puntos de interes de google 
     { featureType: "poi", stylers: [{ visibility: "off" }] },
     { featureType: "transit", stylers: [{ visibility: "off" }] },
@@ -90,7 +90,7 @@ export default function MapaScreen() {
   const [reporteSeleccionado, setReporteSeleccionado] = useState<Reporte | null>(null);
   const [duplicadosCerca, setDuplicadosCerca] = useState<{ reporte: Reporte; distancia: number }[]>([]);
   const [sumando, setSumando] = useState(false);
-
+  
 
   //MODAL
   const campos: CampoFiltro<FiltrosMapa>[] = [
@@ -145,25 +145,28 @@ export default function MapaScreen() {
       if (!(await Location.hasServicesEnabledAsync())) return; // Permiso otorgado, verificamos si el GPS puede estar apagado
 
       const posicion = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+
+      //El mapa  se centra en la ubicación real
+      const region: Region = { ...ubicacion, latitude: posicion.coords.latitude, longitude: posicion.coords.longitude };
+      setUbicacion(region); //Guardamos la ubicacion real del usuario
+      mapRef.current?.animateToRegion(region, 500);
+
+      /* 
+            setUbicacion(actual => {
+        if (
+          actual.latitude === posicion.coords.latitude &&
+          actual.longitude === posicion.coords.longitude
+        ) {
+          return actual;
+        }
       
-      // const region: Region = { ...ubicacion, latitude: posicion.coords.latitude, longitude: posicion.coords.longitude };
-      // setUbicacion(region); //Guardamos la ubicacion real del usuario
-      // mapRef.current?.animateToRegion(region, 500);
-
-      setUbicacion(actual => {
-  if (
-    actual.latitude === posicion.coords.latitude &&
-    actual.longitude === posicion.coords.longitude
-  ) {
-    return actual;
-  }
-
-  return {
-    ...actual,
-    latitude: posicion.coords.latitude,
-    longitude: posicion.coords.longitude
-  };
-});
+        return {
+          ...actual,
+          latitude: posicion.coords.latitude,
+          longitude: posicion.coords.longitude
+        };
+      }
+      ); */
 
     } catch (error) {
       console.error('Error al obtener la ubicación:', error);
@@ -188,7 +191,7 @@ export default function MapaScreen() {
 
   //Acciones sobre el mapa
   //Al tocar el marcador de un reporte creado
-  const alTocarReporte = (reporte: Reporte) => { 
+  const alTocarReporte = (reporte: Reporte) => {
     setPuntoTocado(null);
     setPuntoTocadoConfirmar(null);
     setDuplicadosCerca([]);
@@ -198,48 +201,72 @@ export default function MapaScreen() {
   //Acciones sobre el mapa
   //Al tocar un lugar libre
   const alTocarMapa = (coordenada: { latitude: number; longitude: number }) => {
-      setReporteSeleccionado(null);
-      const punto: Coordenadas = { latitud: coordenada.latitude, longitud: coordenada.longitude };
+    setReporteSeleccionado(null);
+    const punto: Coordenadas = { latitud: coordenada.latitude, longitud: coordenada.longitude };
 
-      const cerca = reportes.map((r) => ({ reporte: r, distancia: distanciaEnMetros(punto, r.coordenadas) }))
-        .filter((x) => x.distancia < RADIO_CERCA_METROS)
-        .sort((a, b) => a.distancia - b.distancia);
+    const cerca = reportes.map((r) => ({ reporte: r, distancia: distanciaEnMetros(punto, r.coordenadas) }))
+      .filter((x) => x.distancia < RADIO_CERCA_METROS)
+      .sort((a, b) => a.distancia - b.distancia);
 
-      if (cerca.length === 0) { // No hay nada reportado ahí: preguntar  antes de ir al formulario 
-        setPuntoTocado(null);
-        setDuplicadosCerca([]);
-        //irANuevoReporte(punto);
-        setPuntoTocadoConfirmar(punto);
-        return;
-      }
+    if (cerca.length === 0) { // No hay nada reportado ahí: preguntar  antes de ir al formulario 
+      setPuntoTocado(null);
+      setDuplicadosCerca([]);
+      //irANuevoReporte(punto);
+      setPuntoTocadoConfirmar(punto);
+      return;
+    }
 
-      // Agregamos vibracian al detectar un reporte duplicado cerca 
-      setPuntoTocadoConfirmar(null);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      setPuntoTocado(punto);
-      setDuplicadosCerca(cerca);
-    };
+    // Agregamos vibracian al detectar un reporte duplicado cerca 
+    setPuntoTocadoConfirmar(null);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setPuntoTocado(punto);
+    setDuplicadosCerca(cerca);
+  };
 
-    ///Acciones sobre el mapa
-    //Al tocar un lugar cerca de un reporte creado
-  const alSumarse = async (reporteId: string) => { // El vecino se suma al reporte en vez de crear otro
+  ///Acciones sobre el mapa
+  //Al tocar un lugar cerca de un reporte creado
+
+  const alSumarse = async (reporteId: string) => {
     if (sumando) return;
+
     setSumando(true);
+
     try {
       const respuesta = await reportesService.sumarseAReporte(reporteId);
-      setReportes((actuales) => actuales.map((r) => (r.id === respuesta.datos.id ? respuesta.datos : r)));
-      setReporteSeleccionado((actual) => actual?.id === respuesta.datos.id ? respuesta.datos : actual);
-      // Vibración al sumarse al reporte 
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      cerrarTarjetas();
-    } catch (e) {
-      console.error('No pudimos sumarte al reporte:', e);
+
+      setReportes((actuales) =>
+        actuales.map((r) =>
+          r.id === respuesta.datos.id ? respuesta.datos : r
+        )
+      );
+
+      setReporteSeleccionado((actual) =>  actual?.id === respuesta.datos.id ? respuesta.datos : actual );
+
+      if (respuesta.status === 201) { //Primera vez que se suma
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
+        cerrarTarjetas();
+        Alert.alert("Reporte", "Te sumaste correctamente al reporte.");
+      } else if (respuesta.status === 200) { //Cuando quiere volver a sumarse
+        Alert.alert("Vecino ya sumado", "Ya te habías sumado a este reporte.");
+      }
+    } catch (e: any) {
+      const errorApi = e.response?.data?.error;
+
+      if (errorApi) {
+        Alert.alert("Error", errorApi.mensaje);
+      } else {
+        console.error("No pudimos sumarte al reporte:", e);
+        Alert.alert("Error", "No pudimos sumarte al reporte.");
+      }
     } finally {
       setSumando(false);
     }
   };
 
-  
+
+
   ///////////////////////////////////////////////
   // HOOKS
   ///////////////////////////////////////////////
@@ -254,7 +281,7 @@ export default function MapaScreen() {
     useCallback(() => {
       let activo = true;
       const cargarDatos = async () => {
-       // console.log("ingreso al primer hook");
+        // console.log("ingreso al primer hook");
         setCargando(true);
         setError(null);
         try {
@@ -263,7 +290,7 @@ export default function MapaScreen() {
 
           if (activo) {
             setReportes(respReportes.datos);
-            setTipos(respTipos);
+            setTipos(respTipos.datos);
           }
 
         } catch (e) {
@@ -319,7 +346,7 @@ export default function MapaScreen() {
         showsUserLocation={!permisoDenegado}
         customMapStyle={colorScheme === "dark" ? [...estiloMapaOscuro, ...ocultarPOI] : ocultarPOI}
         onPress={(e) => alTocarMapa(e.nativeEvent.coordinate)} >
-        
+
         {/* Los marcadores customizados de todos los reportes informados */}
         {reportesVisibles.map((r) => (
           <MarcadorReporte
@@ -327,7 +354,7 @@ export default function MapaScreen() {
             reporte={r}
             color={obtenerInfoEstado(r.estado, coloresEstado).color}
             onPress={alTocarReporte}
-          /> 
+          />
         ))}
 
         {/* Nuevo Marcador: punto tocado */}

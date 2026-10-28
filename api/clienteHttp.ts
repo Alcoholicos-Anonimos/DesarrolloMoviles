@@ -9,7 +9,7 @@ export const api = axios.create({
 
 api.interceptors.request.use(async (config) => {
   const sesion = await sesionService.obtener();
-
+  
   if (sesion?.token) {
     config.headers.Authorization = `Bearer ${sesion.token}`;
   }
