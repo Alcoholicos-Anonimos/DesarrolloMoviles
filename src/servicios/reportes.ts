@@ -1,14 +1,10 @@
 
-<<<<<<< HEAD
-import almacen from "expo-sqlite/kv-store";
-import { MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
-import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
-=======
-import { ApiRespuestaExitosa, CambioDeEstado, NuevoReporteInput, Reporte, TipoDeReporte } from '../tipos';
->>>>>>> main
-
 import { api } from '@/api/clienteHttp';
+import almacen from "expo-sqlite/kv-store";
+import { MOCK_TIPOS } from '../mocks/datos';
+import { ApiRespuestaExitosa, CambioDeEstado, NuevoReporteInput, Reporte, TipoDeReporte } from '../tipos';
 
+const CLAVE_TIPOS = "catalogo_tipos_de_reporte";
 
 // Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
 async function subirArchivo(
