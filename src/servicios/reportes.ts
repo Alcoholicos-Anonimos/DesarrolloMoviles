@@ -1,8 +1,17 @@
+import { 
+  ApiRespuestaExitosa, 
+  CambioDeEstado, 
+  NuevoReporteInput, 
+  Reporte, 
+  TipoDeReporte, 
+  Zona 
+} from '../tipos';
 
-import { ApiRespuestaExitosa, CambioDeEstado, NuevoReporteInput, Reporte, TipoDeReporte } from '../tipos';
+import almacen from "expo-sqlite/kv-store";
+import { MOCK_TIPOS } from "../mocks/datos";
+import { api } from "@/api/clienteHttp";
 
-import { api } from '@/api/clienteHttp';
-
+const CLAVE_TIPOS = "tipos-de-reporte";
 
 // Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
 async function subirArchivo(
@@ -14,7 +23,7 @@ async function subirArchivo(
     uri: uriLocal,
     name: tipo === "imagen" ? "foto.jpg" : "audio.m4a",
     type: tipo === "imagen" ? "image/jpeg" : "audio/mp4",
-  } as unknown as Blob);
+  } as any);
 
   const respuesta = await api.post("archivos", formulario, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -28,7 +37,6 @@ export const reportesService = {
   obtenerMisReportes: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
     const resp = await api.get("yo/reportes");
     return resp.data;
-
   },
 
   // Reportes públicos para el mapa de la ciudad (cualquier vecino los ve)
@@ -38,22 +46,33 @@ export const reportesService = {
   },
 
   // Un vecino se suma a un reporte existente en vez de crear otro duplicado
-
   sumarseAReporte: async (id: string): Promise<{ status: number; datos: Reporte }> => {
     const resp = await api.post("reportes/" + id + "/adhesiones");
-
     return {
       status: resp.status,
       datos: resp.data.datos,
     };
   },
 
-
+  // Tipos de problema: primero la API; sin conexión, el último listado guardado;
+  // y si nunca se bajó ninguno, la lista que viene en la app (los mismos 8 de la API).
   obtenerTipos: async (): Promise<ApiRespuestaExitosa<TipoDeReporte[]>> => {
-    const resp = await api.get("tipos-de-reporte");
-    return resp.data;
+    try {
+      const resp = await api.get("tipos-de-reporte", { timeout: 5000 });
+      almacen.setItem(CLAVE_TIPOS, JSON.stringify(resp.data.datos)).catch(() => {});
+      return resp.data;
+    } catch {
+      let datos: TipoDeReporte[] = MOCK_TIPOS;
+      try {
+        const guardado = await almacen.getItem(CLAVE_TIPOS);
+        if (guardado) datos = JSON.parse(guardado) as TipoDeReporte[];
+      } catch {
+        // Si el listado guardado no se puede leer, usamos el que viene en la app
+      }
+      return { datos };
+    }
   },
-
+  
   // Crea el reporte en la API: primero sube los archivos y después manda el reporte con sus URLs.
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
     const urlsDeFotos: string[] = [];
@@ -77,7 +96,7 @@ export const reportesService = {
     return respuesta.data;
   },
 
-  //Obtengo un reporte por id
+  // Obtengo un reporte por id
   obtenerMisReportesPorId: async (id: string): Promise<ApiRespuestaExitosa<Reporte>> => {
     const resp = await api.get("reportes/" + id);
     return resp.data;
@@ -88,5 +107,10 @@ export const reportesService = {
     return resp.data;
   },
 
+  // 👇 LA FUNCIÓN QUE FALTABA Y ROMPÍA LA PANTALLA 👇
+  listarZonas: async (): Promise<ApiRespuestaExitosa<Zona[]>> => {
+    const resp = await api.get("zonas");
+    return resp.data;
+  },
   
 }
