@@ -1,21 +1,24 @@
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { AuthProvider, useAuth } from "@/src/contexto/AuthContext";
+import { configurarAvisos } from "@/src/servicios/avisos";
+import {
+  inicializarBaseDeDatos,
+  sincronizarPendientes,
+} from "@/src/servicios/colaOffline";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
 import * as Network from "expo-network";
-import { Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, LogBox, View } from "react-native";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
-import { AuthProvider, useAuth } from "@/src/contexto/AuthContext";
-import {
-  inicializarBaseDeDatos,
-  sincronizarPendientes,
-} from "@/src/servicios/colaOffline";
+LogBox.ignoreLogs(["expo-notifications: Android Push notifications"]); //para cartel  ERROR  expo-notifications: Android Push notifications (remote notifications) functionality provided by expo-notifications was removed from Expo Go with the release of SDK 53. Use a development build instead of Expo Go. Read more at https://docs.expo.dev/develop/development-builds/introduction/. 
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -26,6 +29,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     inicializarBaseDeDatos();
+    configurarAvisos();
 
     // Chequea el estado de red cada 5 segundos.
     const intervalo = setInterval(async () => {
@@ -53,6 +57,18 @@ export default function RootLayout() {
 function NavegacionRaiz() {
   const colorScheme = useColorScheme();
   const { usuario, cargandoSesion } = useAuth();
+    
+  useEffect(() => {
+    const suscripcion = Notifications.addNotificationResponseReceivedListener(
+      (respuesta) => {
+        const reporteId = respuesta.notification.request.content.data?.reporteId;
+        if (typeof reporteId === "string") {
+          router.push({ pathname: "/reclamos/[id]", params: { id: reporteId } });
+        }
+      },
+    );
+    return () => suscripcion.remove();
+  }, []);
 
   if (cargandoSesion) {
     return (
@@ -76,6 +92,7 @@ function NavegacionRaiz() {
         <Stack.Protected guard={esVecino}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="reclamos/nuevo-reporte" options={{ headerShown: false }} />
+          <Stack.Screen name="avisos" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={esOperador}>

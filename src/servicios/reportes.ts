@@ -1,11 +1,14 @@
 
+<<<<<<< HEAD
 import almacen from "expo-sqlite/kv-store";
 import { MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
 import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
+=======
+import { ApiRespuestaExitosa, CambioDeEstado, NuevoReporteInput, Reporte, TipoDeReporte } from '../tipos';
+>>>>>>> main
 
 import { api } from '@/api/clienteHttp';
 
-const CLAVE_TIPOS = "catalogo_tipos_de_reporte";
 
 // Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
 async function subirArchivo(
@@ -106,13 +109,5 @@ export const reportesService = {
     return resp.data;
   },
 
-  listarZonas: async (): Promise<ApiRespuestaExitosa<Zona[]>> => {
-    const respuesta = await api.get("zonas");
-    return respuesta.data;
-  },
-
-  listarCuadrillas: async (): Promise<ApiRespuestaExitosa<Cuadrilla[]>> => {
-    const resp = await api.get("cuadrillas");
-    return resp.data;
-  },
+  
 }
