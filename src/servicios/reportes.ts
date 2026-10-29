@@ -1,5 +1,6 @@
 
-import { MOCK_REPORTES } from '../mocks/datos';
+import almacen from "expo-sqlite/kv-store";
+import { MOCK_REPORTES, MOCK_TIPOS } from '../mocks/datos';
 import { ApiRespuestaExitosa, CambioDeEstado, Cuadrilla, NuevoReporteInput, Reporte, TipoDeReporte, Zona } from '../tipos';
 
 import { api } from '@/api/clienteHttp';
@@ -51,11 +52,26 @@ export const reportesService = {
   },
 
 
+  // Tipos de problema: primero la API; sin conexión, el último listado guardado;
+  // y si nunca se bajó ninguno, la lista que viene en la app (los mismos 8 de la API).
+  // Nunca falla: el formulario tiene que poder armarse sin señal.
   obtenerTipos: async (): Promise<ApiRespuestaExitosa<TipoDeReporte[]>> => {
-    const resp = await api.get("tipos-de-reporte");
-    return resp.data;
+    try {
+      const resp = await api.get("tipos-de-reporte", { timeout: 5000 });
+      almacen.setItem(CLAVE_TIPOS, JSON.stringify(resp.data.datos)).catch(() => {});
+      return resp.data;
+    } catch {
+      let datos: TipoDeReporte[] = MOCK_TIPOS;
+      try {
+        const guardado = await almacen.getItem(CLAVE_TIPOS);
+        if (guardado) datos = JSON.parse(guardado) as TipoDeReporte[];
+      } catch {
+        // Si el listado guardado no se puede leer, usamos el que viene en la app
+      }
+      return { datos };
+    }
   },
-
+  
   // Crea el reporte en la API: primero sube los archivos y después manda el reporte con sus URLs.
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
     const urlsDeFotos: string[] = [];
