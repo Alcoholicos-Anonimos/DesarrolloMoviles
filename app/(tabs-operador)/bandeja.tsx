@@ -45,6 +45,17 @@ const ETIQUETA_ESTADO: Record<EstadoReporte, string> = {
   rechazado: "Rechazado",
 };
 
+const TRANSICIONES: Record<EstadoReporte, EstadoReporte[]> = {
+  recibido: ["en_revision", "rechazado"],// puede ver "Cambiar estado" y solo salen essos estados
+  en_revision: [], // tiene que poder  ver "Asignar cuadrilla"
+  asignado: ["resuelto", "rechazado"], // puede ver "Cambiar estado" y solo salen essos estados
+  resuelto: [], // no tiene que poder  ver "Asignar cuadrilla" ni "Cambiar estado"
+  rechazado: [],// no tiene que poder  ver "Asignar cuadrilla" ni "Cambiar estado"
+};
+
+const puedeModificarse = (estado: EstadoReporte) =>
+  TRANSICIONES[estado].length > 0;
+
 export default function BandejaScreen() {
   const { usuario, cerrarSesion } = useAuth();
 
@@ -151,10 +162,8 @@ export default function BandejaScreen() {
     const original = item.duplicadoDe
       ? reportes.find((r) => r.id === item.duplicadoDe)
       : null;
-    const accionPrincipal = item.cuadrillaId
-      ? "Cambiar estado"
-      : "Asignar cuadrilla";
-
+    const mostrarCambiarEstado = puedeModificarse(item.estado);
+    const mostrarAsignarCuadrilla = item.estado === "en_revision";
     return (
       // Tocar la tarjeta abre el detalle. Los Pressable de adentro (badge y botones)
       // siguen funcionando porque el más interno es el que recibe el toque.
@@ -168,18 +177,28 @@ export default function BandejaScreen() {
           <Text style={styles.tituloTarjeta} numberOfLines={1}>
             {tipo?.nombre ?? "Reporte"} - {item.direccion}
           </Text>
-          {/* Tocar el estado también permite cambiarlo (sirve aunque no tenga cuadrilla) */}
-          <Pressable
-            onPress={() => setReporteEstado(item)}
-            hitSlop={8}
-            accessibilityLabel={`Estado: ${ETIQUETA_ESTADO[item.estado]}. Tocá para cambiarlo`}
-            style={[styles.badge, { backgroundColor: colorEstado.fondo }]}
-          >
-            <Text style={[styles.textoBadge, { color: colorEstado.texto }]}>
-              {ETIQUETA_ESTADO[item.estado]}
-            </Text>
-            <Ionicons name="chevron-down" size={tamaniosIconos.pequeno} color={colorEstado.texto} />
-          </Pressable>
+
+          {/* Si puede cambiar de estado muestra el pressable sino un texto */}
+
+          {mostrarCambiarEstado ? (
+            <Pressable
+              onPress={() => setReporteEstado(item)}
+              hitSlop={8}
+              accessibilityLabel={`Estado: ${ETIQUETA_ESTADO[item.estado]}. Tocá para cambiarlo`}
+              style={[styles.badge, { backgroundColor: colorEstado.fondo }]}
+            >
+              <Text style={[styles.textoBadge, { color: colorEstado.texto }]}>
+                {ETIQUETA_ESTADO[item.estado]}
+              </Text>
+              <Ionicons name="chevron-down" size={tamaniosIconos.pequeno} color={colorEstado.texto} />
+            </Pressable>
+          ) : (
+            <View style={[styles.badge, { backgroundColor: colorEstado.fondo }]}>
+              <Text style={[styles.textoBadge, { color: colorEstado.texto }]}>
+                {ETIQUETA_ESTADO[item.estado]}
+              </Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.subtitulo}>
@@ -200,21 +219,33 @@ export default function BandejaScreen() {
         )}
 
         <View style={styles.filaBotones}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.botonTarjeta,
-              pressed && styles.presionado,
-            ]}
-            onPress={() =>
-              item.cuadrillaId
-                ? setReporteEstado(item)
-                : setReporteAsignar(item)
-            }
-          >
-            <Text style={styles.textoBotonTarjeta}>{accionPrincipal}</Text>
-          </Pressable>
-          {/* Si ya es duplicado de otro, no tiene sentido volver a marcarlo */}
-          {!item.duplicadoDe && (
+          {mostrarCambiarEstado && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonTarjeta,
+                pressed && styles.presionado,
+              ]}
+              onPress={() => setReporteEstado(item)}
+            >
+              <Text style={styles.textoBotonTarjeta}>Cambiar estado</Text>
+            </Pressable>
+          )}
+
+          {mostrarAsignarCuadrilla && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.botonTarjeta,
+                pressed && styles.presionado,
+              ]}
+              onPress={() => setReporteAsignar(item)}
+            >
+              <Text style={styles.textoBotonTarjeta}>Asignar cuadrilla</Text>
+            </Pressable>
+          )}
+
+          {!item.duplicadoDe && 
+           !(["resuelto", "rechazado"] as EstadoReporte[]).includes(item.estado) 
+          &&  (
             <Pressable
               style={({ pressed }) => [
                 styles.botonTarjeta,
