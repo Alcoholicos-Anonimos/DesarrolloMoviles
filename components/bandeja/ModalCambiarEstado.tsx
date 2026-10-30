@@ -1,13 +1,3 @@
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { bandejaService } from "@/src/servicios/bandeja";
 import { EstadoReporte, Reporte } from "@/src/tipos";
@@ -18,7 +8,27 @@ import {
   radios,
   tipografia,
 } from "@/styles/theme";
+import { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { HojaInferior } from "./HojaInferior";
+
+
+const TRANSICIONES: Record<EstadoReporte, EstadoReporte[]> = {
+  recibido: ["en_revision", "rechazado"],// puede ver "Cambiar estado" y solo salen essos estados
+  en_revision: [], // tiene que poder  ver "Asignar cuadrilla"
+  asignado: ["resuelto", "rechazado"], // puede ver "Cambiar estado" y solo salen essos estados
+  resuelto: [], // no tiene que poder  ver "Asignar cuadrilla" ni "Cambiar estado"
+  rechazado: [],// no tiene que poder  ver "Asignar cuadrilla" ni "Cambiar estado"
+};
+ 
 
 const ESTADOS: { valor: EstadoReporte; etiqueta: string }[] = [
   { valor: "recibido", etiqueta: "Recibido" },
@@ -45,6 +55,11 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
   const [comentario, setComentario] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Solo se ofrecen los estados a los que se puede pasar desde el actual
+  const opciones = reporte
+    ? ESTADOS.filter((e) => TRANSICIONES[reporte.estado].includes(e.valor))
+    : [];
 
   // Al abrir para otro reporte, arrancamos de cero
   useEffect(() => {
@@ -91,7 +106,7 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
       <ScrollView contentContainerStyle={styles.cuerpo} keyboardShouldPersistTaps="handled">
         <Text style={styles.seccion}>Nuevo estado</Text>
         <View style={styles.chips}>
-          {ESTADOS.filter((e) => e.valor !== reporte?.estado).map((e) => {
+          {opciones.map((e) => {
             const activo = nuevoEstado === e.valor;
             return (
               <Pressable
