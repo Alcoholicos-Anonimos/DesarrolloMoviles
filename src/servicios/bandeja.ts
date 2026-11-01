@@ -1,10 +1,3 @@
-import { avisarAdhesion, avisarCambioDeEstado } from "./avisos";
-import {
-  CAMBIO_ESTADO,
-  MOCK_CUADRILLAS,
-  MOCK_REPORTES,
-  MOCK_ZONAS,
-} from "../mocks/datos";
 import {
   ApiRespuestaExitosa,
   CambioDeEstado,
@@ -13,6 +6,9 @@ import {
   Reporte,
   Zona,
 } from "../tipos";
+import { avisarAdhesion, avisarCambioDeEstado } from "./avisos";
+import { reportesService } from "./reportes";
+import { zonasService } from "./zonas";
 
 export interface FiltrosBandeja {
   zonaId: string | null;
@@ -20,10 +16,10 @@ export interface FiltrosBandeja {
   tipoId: string | null;
 }
 
-const esperar = () => new Promise((res) => setTimeout(res, 300)); // Latencia simulada
+//const esperar = () => new Promise((res) => setTimeout(res, 300)); // Latencia simulada
 
 // Registra un cambio en el historial del reporte
-const registrarCambio = (
+const registrarCambio = async (
   reporteId: string,
   estado: EstadoReporte,
   comentario: string | null,
@@ -37,11 +33,13 @@ const registrarCambio = (
     operadorId,
     fechaHora: new Date().toISOString(),
   };
-  CAMBIO_ESTADO.push(cambio);
+  //CAMBIO_ESTADO.push(cambio);
+  await reportesService.cambiarEstado(reporteId, estado);
 };
 
-const buscarReporte = (reporteId: string): Reporte => {
-  const reporte = MOCK_REPORTES.find((r) => r.id === reporteId);
+const buscarReporte = async (reporteId: string): Promise<Reporte> => {
+  const resp = await reportesService.obtenerMisReportesPorId(reporteId);
+  const reporte = resp.datos;
   if (!reporte) throw new Error("No encontramos el reporte.");
   return reporte;
 };
@@ -51,8 +49,10 @@ export const bandejaService = {
   listar: async (
     filtros: FiltrosBandeja,
   ): Promise<ApiRespuestaExitosa<Reporte[]>> => {
-    await esperar();
-    const datos = MOCK_REPORTES.filter(
+    //await esperar();
+    const resp = await reportesService.obtenerReportesPublicos();
+    
+    const datos = resp.datos.filter(
       (r) => !filtros.zonaId || r.zonaId === filtros.zonaId,
     )
       .filter((r) => !filtros.estado || r.estado === filtros.estado)
@@ -62,7 +62,7 @@ export const bandejaService = {
         (a, b) =>
           b.adhesiones - a.adhesiones || b.creadoEn.localeCompare(a.creadoEn),
       );
-
+    
     return { datos, meta: { total: datos.length, pagina: 1, porPagina: 20 } };
   },
 
@@ -73,13 +73,13 @@ export const bandejaService = {
     comentario: string,
     operadorId: string,
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await esperar();
+    //await esperar();
     if (!comentario.trim()) {
       throw new Error("Escribí un comentario explicando el cambio.");
     }
-    const reporte = buscarReporte(reporteId);
+    const reporte = await buscarReporte(reporteId);
     reporte.estado = estado;
-    registrarCambio(reporteId, estado, comentario.trim(), operadorId);
+    await registrarCambio(reporteId, estado, comentario.trim(), operadorId);
     await avisarCambioDeEstado(reporte, estado, comentario.trim());
     return { datos: reporte };
   },
@@ -90,15 +90,16 @@ export const bandejaService = {
     cuadrillaId: string,
     operadorId: string,
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await esperar();
-    const cuadrilla = MOCK_CUADRILLAS.find((c) => c.id === cuadrillaId);
+    //await esperar();
+    const resp = await zonasService.listarCuadrillas();
+    const cuadrilla = resp.datos.find((c) => c.id === cuadrillaId);
     if (!cuadrilla || !cuadrilla.activa) {
       throw new Error("La cuadrilla no está disponible.");
     }
-    const reporte = buscarReporte(reporteId);
+    const reporte = await buscarReporte(reporteId);
     reporte.cuadrillaId = cuadrillaId;
     reporte.estado = "asignado";
-    registrarCambio(
+    await registrarCambio(
       reporteId,
       "asignado",
       `Asignado a ${cuadrilla.nombre}`,
@@ -117,21 +118,22 @@ export const bandejaService = {
     originalId: string,
     operadorId: string,
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
-    await esperar();
+    //await esperar();
     if (reporteId === originalId) {
       throw new Error("Un reporte no puede ser duplicado de sí mismo.");
     }
-    const reporte = buscarReporte(reporteId);
-    const original = buscarReporte(originalId);
+    const reporte = await buscarReporte(reporteId);
+    const original = await buscarReporte(originalId);
     reporte.duplicadoDe = original.id;
     reporte.estado = "rechazado";
     original.adhesiones += 1;
-    registrarCambio(
-      reporteId,
-      "rechazado",
-      `Reclamo duplicado de este: ${original.id}`,
-      operadorId,
-    );
+    // registrarCambio(
+    //   reporteId,
+    //   "rechazado",
+    //   `Reclamo duplicado de este: ${original.id}`,
+    //   operadorId,
+    // );
+    await reportesService.duplicado(reporteId, originalId);
     await avisarCambioDeEstado(reporte, "rechazado", null);
     await avisarAdhesion(original);
     return { datos: reporte };
@@ -139,14 +141,15 @@ export const bandejaService = {
 
   // Cuadrillas activas (opcionalmente de una zona)
   obtenerCuadrillas: async (zonaId: string | null): Promise<Cuadrilla[]> => {
-    await esperar();
-    return MOCK_CUADRILLAS.filter(
+    //await esperar();
+    const resp = await zonasService.listarCuadrillas();
+    return resp.datos.filter(
       (c) => c.activa && (!zonaId || c.zonaId === zonaId),
     );
   },
 
   obtenerZonas: async (): Promise<Zona[]> => {
-    await esperar();
-    return MOCK_ZONAS;
+    //await esperar();
+    return await zonasService.listarZonas().then((resp) => resp.datos);
   },
 };
