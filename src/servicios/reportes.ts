@@ -1,6 +1,7 @@
 import {
   ApiRespuestaExitosa,
   CambioDeEstado,
+  EstadoReporte,
   NuevoReporteInput,
   Reporte,
   TipoDeReporte,
@@ -12,6 +13,16 @@ import almacen from "expo-sqlite/kv-store";
 import { MOCK_TIPOS } from "../mocks/datos";
 
 const CLAVE_TIPOS = "tipos-de-reporte";
+
+const ESTADOS: Record<EstadoReporte, true> = {
+  recibido: true,
+  en_revision: true,
+  asignado: true,
+  resuelto: true,
+  rechazado: true,
+};
+export const TODOS_LOS_ESTADOS = Object.keys(ESTADOS) as EstadoReporte[];
+export type FiltroEstado = EstadoReporte[] | "todos";
 
 // Sube una foto o un audio y devuelve la URL que la API pide en el reporte.
 async function subirArchivo(
@@ -40,8 +51,12 @@ export const reportesService = {
   },
 
   // Reportes públicos para el mapa de la ciudad (cualquier vecino los ve)
-  obtenerReportesPublicos: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
-    const resp = await api.get("reportes");
+  obtenerReportesPublicos: async (estados?: FiltroEstado): Promise<ApiRespuestaExitosa<Reporte[]>> => {
+    // parametro estado: Uno o varios estados separados por coma. Sin este filtro no se incluyen los rechazado.
+   const lista = estados === "todos" ? TODOS_LOS_ESTADOS : estados;
+   const resp = await api.get("reportes", {
+      params: lista?.length ? { estado: lista.join(",") } : undefined,
+    });
     return resp.data;
   },
 
@@ -110,8 +125,6 @@ export const reportesService = {
   cambiarEstado : async (
     reporteId: string,
     estado: string ) : Promise<ApiRespuestaExitosa<Reporte>> => {
-      ///reportes/:id/estado,
-      console.log("cambiarEstado", reporteId, estado);
     const resp = await api.patch(`reportes/${reporteId}/estado`, { estado });
     return resp.data;
   },
@@ -120,9 +133,7 @@ export const reportesService = {
     reporteId: string,
     originalId: string
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
-    console.log("duplicado", reporteId, originalId);
     const resp = await api.post(`reportes/${reporteId}/duplicado`, { originalId });
-    console.log("duplicado resp", resp);
     return resp.data;
   },
 

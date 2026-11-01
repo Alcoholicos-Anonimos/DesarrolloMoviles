@@ -50,7 +50,9 @@ export const bandejaService = {
     filtros: FiltrosBandeja,
   ): Promise<ApiRespuestaExitosa<Reporte[]>> => {
     //await esperar();
-    const resp = await reportesService.obtenerReportesPublicos();
+    const resp = await reportesService.obtenerReportesPublicos(
+      filtros.estado ? [filtros.estado] : "todos",
+    );
     
     const datos = resp.datos.filter(
       (r) => !filtros.zonaId || r.zonaId === filtros.zonaId,
