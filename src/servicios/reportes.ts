@@ -1,15 +1,15 @@
-import { 
-  ApiRespuestaExitosa, 
-  CambioDeEstado, 
-  NuevoReporteInput, 
-  Reporte, 
-  TipoDeReporte, 
-  Zona 
+import {
+  ApiRespuestaExitosa,
+  CambioDeEstado,
+  NuevoReporteInput,
+  Reporte,
+  TipoDeReporte,
+  Zona
 } from '../tipos';
 
+import { api } from "@/api/clienteHttp";
 import almacen from "expo-sqlite/kv-store";
 import { MOCK_TIPOS } from "../mocks/datos";
-import { api } from "@/api/clienteHttp";
 
 const CLAVE_TIPOS = "tipos-de-reporte";
 
@@ -104,6 +104,25 @@ export const reportesService = {
 
   listarCambiosDeEstado: async (id: string): Promise<ApiRespuestaExitosa<CambioDeEstado[]>> => {
     const resp = await api.get("reportes/" + id + "/cambios");
+    return resp.data;
+  },
+
+  cambiarEstado : async (
+    reporteId: string,
+    estado: string ) : Promise<ApiRespuestaExitosa<Reporte>> => {
+      ///reportes/:id/estado,
+      console.log("cambiarEstado", reporteId, estado);
+    const resp = await api.patch(`reportes/${reporteId}/estado`, { estado });
+    return resp.data;
+  },
+
+  duplicado : async (
+    reporteId: string,
+    originalId: string
+  ): Promise<ApiRespuestaExitosa<Reporte>> => {
+    console.log("duplicado", reporteId, originalId);
+    const resp = await api.post(`reportes/${reporteId}/duplicado`, { originalId });
+    console.log("duplicado resp", resp);
     return resp.data;
   },
 
