@@ -34,13 +34,13 @@ export function crearLinkDetalle(idReporte: string) {
   return Linking.createURL(`/reclamos/${idReporte}`);
 }
 export default function DetalleReporte() {
-// los colores segun el tema del telefono
+  // los colores segun el tema del telefono
   const colorScheme = useColorScheme();
   const tema = colorScheme === "dark" ? "dark" : "light";
   const colores = obtenerColores(tema);
   const coloresEstado = obtenerColoresEstado(tema);
   const styles = crearStyles(tema); //Creamos el estilo segun el color del modo del dispositivo
-  
+
   //ID del reporte que vamos a mostrar
   const { id } = useLocalSearchParams<{ id: string }>();
 
@@ -68,10 +68,10 @@ export default function DetalleReporte() {
 
 
   //Hook para setear el sonido
-   useEffect(() => {
+  useEffect(() => {
     setAudioModeAsync({ playsInSilentMode: true });
   }, []);
-  
+
   //Hook para traer los datos de la api
   useEffect(() => {
     if (!id) return;
@@ -81,7 +81,7 @@ export default function DetalleReporte() {
           reportesService.obtenerMisReportesPorId(id),
           reportesService.listarCambiosDeEstado(id),
         ]);
-        
+
         setReporte(resReporte.datos);
         setCambios(resCambios.datos);
       } catch {
@@ -102,24 +102,24 @@ export default function DetalleReporte() {
   }
 
   //pantalla para error
- if (error || !reporte) {
-  return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.centro}>
-        <Text style={styles.textoError}>
-          {error ?? "No encontramos este reclamo."}
-        </Text>
-      </View>
-    </>
-  );
-}
+  if (error || !reporte) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.centro}>
+          <Text style={styles.textoError}>
+            {error ?? "No encontramos este reclamo."}
+          </Text>
+        </View>
+      </>
+    );
+  }
 
   // color para el estado 
   const colorEstado = coloresEstado[reporte.estado];
   //busca las fotos del reporte, la que esta asociada al problema
-  const fotoProblema = reporte.fotos.find((f) => f.momento === "problema");
-    //busca las fotos del reporte, la que esta asociada al arreglo
+  const fotoProblema = reporte.fotos.filter((f) => f.momento === "problema");
+  //busca las fotos del reporte, la que esta asociada al arreglo
   const fotoArreglo = reporte.fotos.find((f) => f.momento === "arreglo");
 
   // Motivo de rechazo , si lo tiene lo busca, sino null
@@ -127,7 +127,7 @@ export default function DetalleReporte() {
     reporte.estado === "rechazado"
       ? [...cambios].find((c) => c.estado === "rechazado")?.comentario
       : null;
- // link del QR
+  // link del QR
   const linkDetalle = crearLinkDetalle(String(reporte.id));
 
   //pantalla cuando tenemos los datos para mostrar
@@ -174,9 +174,20 @@ export default function DetalleReporte() {
           )}
 
           {/** se muestra la foto del reclamo */}
-          {fotoProblema && (
+          {/* {fotoProblema && (
             <Image source={{ uri: fotoProblema.url }} style={styles.foto} />
-          )}
+          )} */}
+
+          <View style={styles.columnaFotos}>
+            {fotoProblema.map((f) => (
+              <Image
+                key={f.id}
+                source={{ uri: f.url }}
+                style={styles.foto}
+                resizeMode="cover"
+              />
+            ))}
+          </View>
 
           {/** se muestra la descripcion del reclamo */}
           {reporte.descripcion && (
@@ -263,7 +274,15 @@ const crearStyles = (colorScheme: "light" | "dark") => {
   const colores = obtenerColores(colorScheme);
 
   return StyleSheet.create({
-
+    columnaFotos: {
+      gap: espaciados.pequeno, // separación vertical entre fotos
+    },
+    foto: {
+      width: "100%",
+      height: 200,
+      borderRadius: radios.medio,
+      backgroundColor: colores.superficie, // fondo mientras carga
+    },
     container: {
       flex: 1,
       backgroundColor: colores.fondo,
@@ -356,13 +375,13 @@ const crearStyles = (colorScheme: "light" | "dark") => {
       color: colores.error,
     },
 
-    foto: {
-      width: "100%",
-      height: 180,
-      borderRadius: radios.pequeno,
-      backgroundColor: colores.superficie,
-      marginBottom: espaciados.medio,
-    },
+    /*   foto: {
+        width: "100%",
+        height: 180,
+        borderRadius: radios.pequeno,
+        backgroundColor: colores.superficie,
+        marginBottom: espaciados.medio,
+      }, */
 
     descripcion: {
       ...tipografia.textoSecundario,

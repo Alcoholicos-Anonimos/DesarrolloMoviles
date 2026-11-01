@@ -204,6 +204,11 @@ export default function ReclamoScreen() {
           data={reportes}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listaContainer}
+           ListEmptyComponent={
+            <Text style={styles.textoVacio}>
+              No hay reclamos para mostrar. Presioná el botón + para crear uno nuevo.
+            </Text>
+          }
           ItemSeparatorComponent={() => <View style={styles.separador} />}
           renderItem={({ item }) => {
             const tipoInfo = obtenerTipo(item.tipoId);
@@ -350,6 +355,12 @@ const crearStyles = (tema: "light" | "dark") => {
     textoBadge: {
       ...tipografia.textoSecundario,
       fontWeight: pesosFuente.seminegrita,
+    },
+      textoVacio: {
+      ...tipografia.texto,
+      color: colores.textoSecundario,
+      textAlign: "center",
+      marginTop: espaciados.enorme,
     },
   });
 };
