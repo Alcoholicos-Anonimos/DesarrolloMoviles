@@ -45,6 +45,14 @@ async function subirArchivo(
 
 export const reportesService = {
 
+  asignarCuadrilla: async (
+    reporteId: string,
+    cuadrillaId: string,
+    comentario: string
+  ): Promise<ApiRespuestaExitosa<Reporte>> => {
+    const resp = await api.patch(`reportes/${reporteId}/cuadrilla`, { cuadrillaId, comentario });
+    return resp.data;
+  },
   obtenerMisReportes: async (): Promise<ApiRespuestaExitosa<Reporte[]>> => {
     const resp = await api.get("yo/reportes");
     return resp.data;
@@ -53,8 +61,8 @@ export const reportesService = {
   // Reportes públicos para el mapa de la ciudad (cualquier vecino los ve)
   obtenerReportesPublicos: async (estados?: FiltroEstado): Promise<ApiRespuestaExitosa<Reporte[]>> => {
     // parametro estado: Uno o varios estados separados por coma. Sin este filtro no se incluyen los rechazado.
-   const lista = estados === "todos" ? TODOS_LOS_ESTADOS : estados;
-   const resp = await api.get("reportes", {
+    const lista = estados === "todos" ? TODOS_LOS_ESTADOS : estados;
+    const resp = await api.get("reportes", {
       params: lista?.length ? { estado: lista.join(",") } : undefined,
     });
     return resp.data;
@@ -74,7 +82,7 @@ export const reportesService = {
   obtenerTipos: async (): Promise<ApiRespuestaExitosa<TipoDeReporte[]>> => {
     try {
       const resp = await api.get("tipos-de-reporte", { timeout: 5000 });
-      almacen.setItem(CLAVE_TIPOS, JSON.stringify(resp.data.datos)).catch(() => {});
+      almacen.setItem(CLAVE_TIPOS, JSON.stringify(resp.data.datos)).catch(() => { });
       return resp.data;
     } catch {
       let datos: TipoDeReporte[] = MOCK_TIPOS;
@@ -87,7 +95,7 @@ export const reportesService = {
       return { datos };
     }
   },
-  
+
   // Crea el reporte en la API: primero sube los archivos y después manda el reporte con sus URLs.
   crearReporte: async (input: NuevoReporteInput): Promise<ApiRespuestaExitosa<Reporte>> => {
     const urlsDeFotos: string[] = [];
@@ -122,14 +130,15 @@ export const reportesService = {
     return resp.data;
   },
 
-  cambiarEstado : async (
+  cambiarEstado: async (
     reporteId: string,
-    estado: string ) : Promise<ApiRespuestaExitosa<Reporte>> => {
-    const resp = await api.patch(`reportes/${reporteId}/estado`, { estado });
+    estado: string,
+    comentario: string): Promise<ApiRespuestaExitosa<Reporte>> => {
+    const resp = await api.patch(`reportes/${reporteId}/estado`, { estado, comentario });
     return resp.data;
   },
 
-  duplicado : async (
+  duplicado: async (
     reporteId: string,
     originalId: string
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
@@ -142,5 +151,5 @@ export const reportesService = {
     const resp = await api.get("zonas");
     return resp.data;
   },
-  
+
 }
