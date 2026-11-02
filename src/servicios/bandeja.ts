@@ -16,13 +16,14 @@ export interface FiltrosBandeja {
   tipoId: string | null;
 }
 
+export type FiltroEstado = EstadoReporte[] | "todos";
 //const esperar = () => new Promise((res) => setTimeout(res, 300)); // Latencia simulada
 
 // Registra un cambio en el historial del reporte
 const registrarCambio = async (
   reporteId: string,
   estado: EstadoReporte,
-  comentario: string | null,
+  comentario: string,
   operadorId: string,
 ) => {
   const cambio: CambioDeEstado = {
@@ -34,7 +35,7 @@ const registrarCambio = async (
     fechaHora: new Date().toISOString(),
   };
   //CAMBIO_ESTADO.push(cambio);
-  await reportesService.cambiarEstado(reporteId, estado);
+  await reportesService.cambiarEstado(reporteId, estado, comentario);
 };
 
 const buscarReporte = async (reporteId: string): Promise<Reporte> => {
@@ -46,7 +47,7 @@ const buscarReporte = async (reporteId: string): Promise<Reporte> => {
 
 export const bandejaService = {
   // Lista de reportes para el operador, con filtros
-  listar: async (
+ listar: async (
     filtros: FiltrosBandeja,
   ): Promise<ApiRespuestaExitosa<Reporte[]>> => {
     //await esperar();
@@ -67,6 +68,7 @@ export const bandejaService = {
     
     return { datos, meta: { total: datos.length, pagina: 1, porPagina: 20 } };
   },
+
 
   // Cambia el estado dejando escrito por qué
   cambiarEstado: async (
@@ -93,22 +95,25 @@ export const bandejaService = {
     operadorId: string,
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
     //await esperar();
+
     const resp = await zonasService.listarCuadrillas();
     const cuadrilla = resp.datos.find((c) => c.id === cuadrillaId);
     if (!cuadrilla || !cuadrilla.activa) {
       throw new Error("La cuadrilla no está disponible.");
     }
     const reporte = await buscarReporte(reporteId);
-    reporte.cuadrillaId = cuadrillaId;
-    reporte.estado = "asignado";
-    await registrarCambio(
-      reporteId,
-      "asignado",
-      `Asignado a ${cuadrilla.nombre}`,
-      operadorId,
-    );
+
+    const enviar = await reportesService.asignarCuadrilla(reporteId, cuadrillaId, cuadrilla.nombre + " " + cuadrilla.especialidad);
+    // reporte.cuadrillaId = cuadrillaId;
+    // reporte.estado = "asignado";
+    // await registrarCambio(
+    //   reporteId,
+    //   "asignado",
+    //   `Asignado a ${cuadrilla.nombre}`,
+    //   operadorId,
+    // );
     await avisarCambioDeEstado(reporte, "asignado", `Asignado a ${cuadrilla.nombre}`);
-    return { datos: reporte };
+    return { datos: enviar.datos };
   },
 
   // Marca un reporte como duplicado de otro.
