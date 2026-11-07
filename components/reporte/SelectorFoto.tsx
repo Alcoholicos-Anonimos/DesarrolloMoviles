@@ -21,9 +21,16 @@ const MAXIMO_FOTOS = 2;
 type Props = {
   fotos: string[];
   onFotosChange: (fotos: string[]) => void;
+  titulo?: string;
+  maximo?: number;
 };
 
-export function SelectorFoto({ fotos, onFotosChange }: Props) {
+export function SelectorFoto({
+  fotos,
+  onFotosChange,
+  titulo = "Foto (obligatoria)",
+  maximo = MAXIMO_FOTOS,
+}: Props) {
   const colorScheme = useColorScheme();
   const colores = obtenerColores(colorScheme === "dark" ? "dark" : "light");
   const styles = crearStyles(colorScheme === "dark" ? "dark" : "light");
@@ -68,11 +75,11 @@ export function SelectorFoto({ fotos, onFotosChange }: Props) {
     }
   };
 
-  const quedaLugar = fotos.length < MAXIMO_FOTOS;
+  const quedaLugar = fotos.length < maximo;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Foto (obligatoria)</Text>
+      <Text style={styles.sectionTitle}>{titulo}</Text>
 
       {fotos.length > 0 && (
         <View style={styles.filaPreview}>
@@ -112,7 +119,7 @@ export function SelectorFoto({ fotos, onFotosChange }: Props) {
         <Text style={styles.textoAyuda}>
           {quedaLugar
             ? "Tocá una foto para sacarla"
-            : "Máximo 2 fotos. Tocá una para sacarla."}
+            : `Máximo ${maximo} ${maximo === 1 ? "foto" : "fotos"}. Tocá una para sacarla.`}
         </Text>
       )}
     </View>

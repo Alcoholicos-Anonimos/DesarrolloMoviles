@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { HojaInferior } from "./HojaInferior";
+import { SelectorFoto } from "@/components/reporte/SelectorFoto";
 
 
 const TRANSICIONES: Record<EstadoReporte, EstadoReporte[]> = {
@@ -55,6 +56,7 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
   const [comentario, setComentario] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fotosArreglo, setFotosArreglo] = useState<string[]>([]);
 
   // Solo se ofrecen los estados a los que se puede pasar desde el actual
   const opciones = reporte
@@ -66,6 +68,7 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
     setNuevoEstado(null);
     setComentario("");
     setError(null);
+    setFotosArreglo([]);
   }, [reporte]);
 
   const guardar = async () => {
@@ -78,10 +81,14 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
       setError("Escribí un comentario explicando el cambio.");
       return;
     }
+    if (nuevoEstado === "resuelto" && fotosArreglo.length === 0) {
+      setError("Sacá una foto del arreglo para marcarlo como resuelto.");
+      return;
+    }
     setError(null);
     setGuardando(true);
     try {
-      await bandejaService.cambiarEstado(reporte.id, nuevoEstado, comentario, operadorId);
+      await bandejaService.cambiarEstado(reporte.id, nuevoEstado, comentario, operadorId, fotosArreglo[0]);
       onListo();
     } catch (e) {
       setError(e instanceof Error ? e.message : "No pudimos cambiar el estado.");
@@ -125,6 +132,18 @@ export function ModalCambiarEstado({ reporte, operadorId, onCerrar, onListo }: P
             );
           })}
         </View>
+
+        {nuevoEstado === "resuelto" && (
+            <SelectorFoto
+              fotos={fotosArreglo}
+              onFotosChange={(f) => {
+                setFotosArreglo(f);
+                setError(null);
+              }}
+              titulo="Foto del arreglo (obligatoria)"
+              maximo={1}
+            />
+          )}
 
         <Text style={styles.seccion}>Comentario (obligatorio)</Text>
         <TextInput
