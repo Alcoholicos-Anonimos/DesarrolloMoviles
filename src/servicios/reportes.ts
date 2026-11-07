@@ -138,6 +138,17 @@ export const reportesService = {
     return resp.data;
   },
 
+  // Foto del arreglo (operador): primero se sube con POST /archivos
+  // y después se asocia al reporte. La API la guarda con momento "arreglo".
+  agregarFotoArreglo: async (
+    reporteId: string,
+    uriLocal: string,
+  ): Promise<ApiRespuestaExitosa<Reporte>> => {
+    const url = await subirArchivo(uriLocal, "imagen");
+    const resp = await api.post(`reportes/${reporteId}/fotos`, { url });
+    return resp.data;
+  },
+
   duplicado: async (
     reporteId: string,
     originalId: string

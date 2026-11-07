@@ -76,12 +76,21 @@ export const bandejaService = {
     estado: EstadoReporte,
     comentario: string,
     operadorId: string,
+    fotoArreglo?: string,
   ): Promise<ApiRespuestaExitosa<Reporte>> => {
     //await esperar();
     if (!comentario.trim()) {
       throw new Error("Escribí un comentario explicando el cambio.");
     }
     const reporte = await buscarReporte(reporteId);
+    // La foto va antes del cambio: la API la acepta con el reporte en "asignado".
+    // Si falla la subida, el reporte no queda resuelto sin prueba.
+    if (estado === "resuelto") {
+      if (!fotoArreglo) {
+        throw new Error("Sacá una foto del arreglo para marcarlo como resuelto.");
+      }
+      await reportesService.agregarFotoArreglo(reporteId, fotoArreglo);
+    }
     reporte.estado = estado;
     await registrarCambio(reporteId, estado, comentario.trim(), operadorId);
     await avisarCambioDeEstado(reporte, estado, comentario.trim());
