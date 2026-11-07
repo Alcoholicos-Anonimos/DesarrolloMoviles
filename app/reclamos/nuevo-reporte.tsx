@@ -1,6 +1,7 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import * as Network from "expo-network";
 import { router, useLocalSearchParams } from "expo-router";
+import axios from "axios";
 import { useCallback, useRef, useState } from "react";
 import {
   Alert,
@@ -136,8 +137,20 @@ export default function NuevoReporte() {
         `Tu número de seguimiento es ${respuesta.datos.codigo}`,
         [{ text: "Aceptar", onPress: () => router.back() }],
       );
-    } catch {
-      // Si falla igual habiendo conexión (por ejemplo, el servidor no responde),
+    } catch (e) {
+      // Si la API respondió con un error (por ejemplo FUERA_DE_LA_CIUDAD),
+      // mostramos su mensaje y nos quedamos para que el vecino lo corrija.
+      // Reintentarlo no serviría: va a fallar igual.
+      const mensajeApi = axios.isAxiosError(e)
+        ? e.response?.data?.error?.mensaje
+        : undefined;
+
+      if (mensajeApi) {
+        Alert.alert("No se pudo enviar", mensajeApi);
+        return;
+      }
+
+      // Si no hubo respuesta (sin señal, servidor caído),
       // lo guardamos para reintentar más tarde en vez de perderlo.
       await guardarReportePendiente(input);
       Alert.alert(
