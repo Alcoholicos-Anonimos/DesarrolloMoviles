@@ -1,4 +1,5 @@
 import { ModalAsignarCuadrilla } from "@/components/bandeja/ModalAsignarCuadrilla";
+import { isAxiosError } from "axios";
 import { ModalCambiarEstado } from "@/components/bandeja/ModalCambiarEstado";
 import { ModalDuplicado } from "@/components/bandeja/ModalDuplicado";
 import { ModalEscanearQR } from "@/components/bandeja/ModalEscanearQR";
@@ -146,13 +147,24 @@ export default function BandejaScreen() {
     });
   };
 
-  const alEscanear = (texto: string) => {
+  const alEscanear = async (texto: string) => {
     setMostrarScanner(false);
-    const encontrado = reportes.find((r) => r.codigo === texto || r.id === texto);
-    router.push({
-      pathname: "/reclamos/[id]",
-      params: { id: encontrado?.id ?? texto },
-    });
+    const codigo = texto.trim().toUpperCase();
+
+    try {
+      // Le preguntamos a la API qué reclamo tiene ese código
+      const resp = await reportesService.obtenerPorCodigo(codigo);
+      router.push({
+        pathname: "/reclamos/[id]",
+        params: { id: resp.datos.id },
+      });
+    } catch (e) {
+      if (isAxiosError(e) && e.response?.status === 404) {
+        Alert.alert("QR no válido", `No encontramos un reclamo con el código ${codigo}.`);
+      } else {
+        Alert.alert("Error", "No pudimos buscar el reclamo. Revisá la conexión e intentá de nuevo.");
+      }
+    }
   };
 
   const renderTarjeta = ({ item }: { item: Reporte }) => {
