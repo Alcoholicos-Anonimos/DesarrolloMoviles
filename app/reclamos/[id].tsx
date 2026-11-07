@@ -127,9 +127,7 @@ export default function DetalleReporte() {
     reporte.estado === "rechazado"
       ? [...cambios].find((c) => c.estado === "rechazado")?.comentario
       : null;
-  // link del QR
-  const linkDetalle = crearLinkDetalle(String(reporte.id));
-
+  
   //pantalla cuando tenemos los datos para mostrar
   return (
     <SafeAreaView style={styles.container}>
@@ -255,7 +253,7 @@ export default function DetalleReporte() {
           >
             <View style={styles.tarjetaQR}>
               <Image
-                source={{ uri: urlQR(linkDetalle) }}
+                source={{ uri: urlQR(reporte.codigo) }}
                 style={{ width: 200, height: 200 }}
               />
               <Text style={styles.textoQR}>{reporte.codigo}</Text>

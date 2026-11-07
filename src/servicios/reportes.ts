@@ -152,4 +152,10 @@ export const reportesService = {
     return resp.data;
   },
 
+    // Busca un reporte por su número de seguimiento (lo que trae el QR del mostrador)
+  obtenerPorCodigo: async (codigo: string): Promise<ApiRespuestaExitosa<Reporte>> => {
+    const resp = await api.get("reportes/codigo/" + encodeURIComponent(codigo));
+    return resp.data;
+  },
+
 }
