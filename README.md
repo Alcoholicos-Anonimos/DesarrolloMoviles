@@ -1,59 +1,67 @@
-# Usuarios para INICIAR SESIÓN en la app
-   nombre: 'Vecino de Prueba',
-   email: 'vecino@mail.com',
-   Contraseña: 123456
+# TFI Grupo 1 - Desarrollo de Moviles 2026 - UNER
 
-    nombre: 'Operador Municipal',
-    email: 'operador@muni.gob.ar',
-    Contraseña: 123456
+# Reporte Ciudadano
 
-# Welcome to your Expo app 👋
+App móvil para  los vecinos de Gualeguaychú reporten problemas de la ciudad
+(baches, luminarias, basura, ramas caídas, etc.) y puedan seguir qué pasa con
+cada reclamo. Los operadores de la Municipalidad usan la misma app para
+gestionarlos.
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-## Get started
+## Qué puede hacer
 
-1. Install dependencies
+**Vecino**
+- Crear un reporte con foto obligatoria, ubicación por GPS y descripción escrita o por nota de voz.
+- Seguir el estado de sus reclamos: recibido, en revisión, asignado a cuadrilla, resuelto o rechazado.
+- Ver todos los reportes en un mapa y sumarse a uno que ya existe en lugar de crear otro.
+- Mostrar un código QR de su reclamo en el mostrador.
+- Recibir avisos cuando cambia el estado de un reclamo, y apagarlos si no los quiere.
+- Crear reportes sin conexión: se guardan en el teléfono y se suben solos cuando vuelve la señal.
 
-   ```bash
-   npm install
-   ```
+**Operador**
+- Ver la bandeja de reportes con filtros por estado, tipo y zona.
+- Cambiar el estado de un reporte (dejando el motivo), asignarlo a una cuadrilla o marcarlo como duplicado.
+- Escanear el QR del vecino para abrir su reclamo.
+- Consultar las zonas y las cuadrillas de cada una.
 
-2. Start the app
 
-   ```bash
-   npx expo start
-   ```
+## Estructura del proyecto
 
-In the output, you'll find options to open the app in a
+```
+app/                  Pantallas y rutas (Expo Router)
+├── auth/             Inicio de sesión y registro
+├── (tabs)/           Pestañas del vecino
+├── (tabs-operador)/  Pestañas del operador
+└── reclamos/         Nuevo reporte y detalle de un reclamo
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+components/           Componentes reutilizables (modales, chips, etc.)
+src/
+├── contexto/         Sesión del usuario (AuthContext)
+├── servicios/        Acceso a datos: toda lectura y escritura pasa por acá
+└── tipos/            Tipos de TypeScript compartidos
+styles/theme.ts       Colores, espaciados y tipografía (modo claro y oscuro)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Datos y API
 
-## Learn more
+La app habla con la API de la cátedra a través de `api/clienteHttp.ts`. Las
+pantallas no hacen pedidos directamente: usan siempre las funciones del servicio
+`src/servicios/`.
 
-To learn more about developing your project with Expo, look at the following resources:
+La API responde siempre con esta forma:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```json
+{ "datos": [], "meta": { "total": 0, "pagina": 1, "porPagina": 20 } }
+```
 
-## Join the community
+o, si hay un error:
 
-Join our community of developers creating universal apps.
+```json
+{ "error": { "codigo": "FOTO_REQUERIDA", "mensaje": "El reporte necesita al menos una foto." } }
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Estilos
+
+Todos los colores, espaciados y tamaños salen de `styles/theme.ts`. La app
+respeta el modo claro y oscuro del teléfono. Para que las pantallas se vean
+igual entre sí, usá esas propiedades en vez de escribir colores a mano.
