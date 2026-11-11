@@ -1,5 +1,13 @@
 # TFI Grupo 1 - Desarrollo de Moviles 2026 - UNER
 
+# Grupo 1 - integrantes:
+- Ariel Alejandro Aragón
+- Luis Gutiérrez
+- Natalia Pellegrineschi
+- Elian Perez
+- Vanesa Mariana Rimada Maidana
+- Valeria Aylin Travnik Armitano
+
 # Reporte Ciudadano
 
 App móvil para  los vecinos de Gualeguaychú reporten problemas de la ciudad
